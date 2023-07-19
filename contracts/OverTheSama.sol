@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -138,70 +138,59 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     function acceptOffer(uint _id, uint _fee2) public payable liveContract {
         Offer storage offer = getStorageOffers(_id);
 
+        address[] memory tokenAddresses;
+        uint[][] memory tokenAmounts;
+        uint[][] memory tokenIds;
+
         if (msg.sender == offer.user1) {
-            if (offer.tokenAddresses1.length > 0) {
-                for (uint i = 0; i < offer.tokenAddresses1.length; i++) {
-                    ercStandard = checkErcStandard(offer.tokenAddresses1[i]);
-                    
-                    if (ercStandard == 20) {
-                        erc20 = IERC20(offer.tokenAddresses1[i]);
-                        require(erc20.balanceOf(offer.user1) >= offer.tokenAmounts1[i][0], "Not enough ERC20");
-                        erc20.transferFrom(offer.user1, address(this), offer.tokenAmounts1[i][0]);
-                    }
-
-                    if (ercStandard == 721) {
-                        erc721 = IERC721(offer.tokenAddresses1[i]);
-                        require(offer.user1 == erc721.ownerOf(offer.tokenIds1[i][0]), "Not owner of ERC721");
-                        erc721.safeTransferFrom(offer.user1, address(this), offer.tokenIds1[i][0], "");
-                    }
-
-                    if (ercStandard == 1155) {
-                        erc1155 = IERC1155(offer.tokenAddresses1[i]);
-                        for (uint j = 0; j < offer.tokenIds1[i].length; j++) {
-                            require(erc1155.balanceOf(offer.user1, offer.tokenIds1[i][j]) >= offer.tokenAmounts1[i][j], "Not enough ERC1155");
-                        }
-                        erc1155.safeBatchTransferFrom(offer.user1, address(this), offer.tokenIds1[i], offer.tokenAmounts1[i], "");    
-                    }  
-                }
-            }
-            collectedProtocolFees += offer.fee1;
-            offer.sent1 = true;
+           tokenAddresses = offer.tokenAddresses1;
+           tokenAmounts = offer.tokenAmounts1;
+           tokenIds = offer.tokenIds1;
 
         } else {
-            offer.user2 = payable(msg.sender);
             require(msg.value >= offer.etherAmount2, "Not enough ETH");
-
-            if (offer.tokenAddresses2.length > 0) {
-                for (uint i = 0; i < offer.tokenAddresses2.length; i++) {
-                    ercStandard = checkErcStandard(offer.tokenAddresses2[i]);
-                    
-                    if (ercStandard == 20) {
-                        erc20 = IERC20(offer.tokenAddresses2[i]);
-                        require(erc20.balanceOf(offer.user2) >= offer.tokenAmounts2[i][0], "Not enough ERC20");
-                        erc20.transferFrom(offer.user2, address(this), offer.tokenAmounts2[i][0]);
-                    }
-
-                    if (ercStandard == 721) {
-                        erc721 = IERC721(offer.tokenAddresses2[i]);
-                        require(offer.user2 == erc721.ownerOf(offer.tokenIds2[i][0]), "Not owner of ERC721");
-                        erc721.safeTransferFrom(offer.user2, address(this), offer.tokenIds2[i][0], "");
-                    }
-
-                    if (ercStandard == 1155) {
-                        erc1155 = IERC1155(offer.tokenAddresses2[i]);
-                        for (uint j = 0; j < offer.tokenIds2[i].length; j++) {
-                            require(erc1155.balanceOf(offer.user2, offer.tokenIds2[i][j]) >= offer.tokenAmounts2[i][j], "Not enough ERC1155");
-                        }
-                        erc1155.safeBatchTransferFrom(offer.user2, address(this), offer.tokenIds2[i], offer.tokenAmounts2[i], "");    
-                    }  
-                }
-            }
+            offer.user2 = payable(msg.sender);
             offer.fee2 = _fee2;
+            tokenAddresses = offer.tokenAddresses2;
+            tokenAmounts = offer.tokenAmounts2;
+            tokenIds = offer.tokenIds2;
+        }
+
+
+        if (tokenAddresses.length > 0) {
+            for (uint8 i; i < tokenAddresses.length; i++) {
+                ercStandard = checkErcStandard(tokenAddresses[i]);
+                
+                if (ercStandard == 20) {
+                    erc20 = IERC20(tokenAddresses[i]);
+                    require(erc20.balanceOf(msg.sender) >= tokenAmounts[i][0], "Not enough ERC20");
+                    erc20.transferFrom(msg.sender, address(this), tokenAmounts[i][0]);
+                
+                } else if (ercStandard == 721) {
+                    erc721 = IERC721(tokenAddresses[i]);
+                    require(msg.sender == erc721.ownerOf(tokenIds[i][0]), "Not owner of ERC721");
+                    erc721.safeTransferFrom(msg.sender, address(this), tokenIds[i][0], "");
+                
+                } else if (ercStandard == 1155) {
+                    erc1155 = IERC1155(tokenAddresses[i]);
+                    for (uint8 j; j < offer.tokenIds1[i].length; j++) {
+                        require(erc1155.balanceOf(msg.sender, tokenIds[i][j]) >= tokenAmounts[i][j], "Not enough ERC1155");
+                    }
+                    erc1155.safeBatchTransferFrom(msg.sender, address(this), tokenIds[i], tokenAmounts[i], "");    
+                }  
+            }
+        }
+
+        if (msg.sender == offer.user1) {
+            collectedProtocolFees += offer.fee1;
+            offer.sent1 = true;   
+
+        } else {
             collectedProtocolFees += offer.fee2;
             offer.sent2 = true;
-
             swapAndSendTokens(offer.id);
             offer.status = "completed";
+
         }
     }
 
