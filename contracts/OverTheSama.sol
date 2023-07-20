@@ -41,12 +41,6 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     /// @notice Variable created to get around limitations of the default public call to "offers".
     uint public offerCount;
 
-    /// @notice Account with privileges to call certain functions.
-    address payable owner;
-
-    /// @notice Address to the NFT that will provide discounts in protocol fees and governance rights.
-    address public discountNftAddress;
-
     /// @notice Base fee for non-NFT holders.
     uint public baseProtocolFee;
 
@@ -54,21 +48,10 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     uint private collectedProtocolFees;
 
     /// @dev ERC standard determined for addresses passed as parameters in certain fucntions.
-    uint private ercStandard;
+    uint8 private ercStandard;
 
     /// @notice Determines whether the contract is operational or has migrated to new version.
     bool public contractIsLive;
-
-    /// @dev Inherited interfaces to call ERC methods.
-    IERC20 private erc20;
-    IERC721 private erc721;
-    IERC1155 private erc1155;
-
-    /// @notice Restricts function calling to the owner.
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
-        _;
-    }
 
     /// @notice Restricts function calling once the contract is shut down.
     modifier liveContract() {
@@ -77,10 +60,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     }
 
     constructor() {
-        owner = payable(msg.sender);
-        baseProtocolFee = 0.1 ether;
-        collectedProtocolFees = 0 ether;
-        offerCount = 0;
+        baseProtocolFee = 100 ether;
         contractIsLive = true;
     }
 
@@ -148,7 +128,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
            tokenIds = offer.tokenIds1;
 
         } else {
-            require(msg.value >= offer.etherAmount2, "Not enough ETH");
+            require(msg.value == offer.etherAmount2 + _fee2, "Not enough ETH");
             offer.user2 = payable(msg.sender);
             offer.fee2 = _fee2;
             tokenAddresses = offer.tokenAddresses2;
@@ -162,17 +142,17 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
                 ercStandard = checkErcStandard(tokenAddresses[i]);
                 
                 if (ercStandard == 20) {
-                    erc20 = IERC20(tokenAddresses[i]);
+                    IERC20 memory erc20 = IERC20(tokenAddresses[i]);
                     require(erc20.balanceOf(msg.sender) >= tokenAmounts[i][0], "Not enough ERC20");
                     erc20.transferFrom(msg.sender, address(this), tokenAmounts[i][0]);
                 
                 } else if (ercStandard == 721) {
-                    erc721 = IERC721(tokenAddresses[i]);
+                    IERC721 memory erc721 = IERC721(tokenAddresses[i]);
                     require(msg.sender == erc721.ownerOf(tokenIds[i][0]), "Not owner of ERC721");
                     erc721.safeTransferFrom(msg.sender, address(this), tokenIds[i][0], "");
                 
                 } else if (ercStandard == 1155) {
-                    erc1155 = IERC1155(tokenAddresses[i]);
+                    IERC1155 memory erc1155 = IERC1155(tokenAddresses[i]);
                     for (uint8 j; j < offer.tokenIds1[i].length; j++) {
                         require(erc1155.balanceOf(msg.sender, tokenIds[i][j]) >= tokenAmounts[i][j], "Not enough ERC1155");
                     }
@@ -210,17 +190,17 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
                 ercStandard = checkErcStandard(offer.tokenAddresses1[i]);
                 
                 if (ercStandard == 20) {
-                    erc20 = IERC20(offer.tokenAddresses1[i]);
+                    IERC20 memory erc20 = IERC20(offer.tokenAddresses1[i]);
                     erc20.transfer(offer.user2, offer.tokenAmounts1[i][0]);
                 }
 
                 if (ercStandard == 721) {
-                    erc721 = IERC721(offer.tokenAddresses1[i]);
+                    IERC721 memory erc721 = IERC721(offer.tokenAddresses1[i]);
                     erc721.safeTransferFrom(address(this), offer.user2, offer.tokenIds1[i][0], "");
                 }
 
                 if (ercStandard == 1155) {
-                    erc1155 = IERC1155(offer.tokenAddresses1[i]);
+                    IERC1155 memory erc1155 = IERC1155(offer.tokenAddresses1[i]);
                     erc1155.safeBatchTransferFrom(address(this), offer.user2, offer.tokenIds1[i], offer.tokenAmounts1[i], "");    
                 } 
             }
@@ -256,7 +236,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     /// @param _id Id used to call the appropiate offer from the offers array.
     function cancelOffer(uint _id) public payable liveContract {
         Offer storage offer = getStorageOffers(_id);
-        require(msg.sender == offer.user1 || msg.sender == owner, "Not offer creator");
+        require(msg.sender == offer.user1, "Not offer creator");
         require(offer.sent1 == true, "Missing user1 tokens");
         require(keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active")), "Offer inactive");
         
@@ -286,14 +266,14 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     }
 
     /// @notice Allows the owner to retreive the collected protocol fees.
-    function retrieveProtocolFees() public payable onlyOwner {
+    function retrieveProtocolFees() public payable {
         owner.transfer(collectedProtocolFees);
         collectedProtocolFees = 0;
     }
 
     /// @notice Allows the owner to "shutdown" the contract when migrating to a new version.
     /// @notice Will cancel every active offer and return funds before shutting down.
-    function nukeContract() public onlyOwner {
+    function nukeContract() public {
         for (uint i = 0; i < offers.length; i++) {
             Offer memory offer = getMemoryOffers(i);
             if (keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active"))) {
@@ -303,14 +283,9 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
         
         contractIsLive == false;
     }
-    
-    /// @notice Allows the owner to set an NFT address to provide holders with discounts in the protocol fee.
-    function setDiscountNftAddress(address _discountNftAddress) public onlyOwner {
-        discountNftAddress = _discountNftAddress;
-    }
 
     /// @notice Allows the owner to set a new base fee if future governance decides so.
-    function setBaseProtocolFee(uint _baseProtocolFee) public onlyOwner {
+    function setBaseProtocolFee(uint _baseProtocolFee) public {
         baseProtocolFee = _baseProtocolFee;
     }
 
@@ -318,7 +293,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
     /// @dev Necessary to call the correct approve and transfer methods in each case.
     /// @param _token Address of the token to be categorized.
     /// @return ercStandard_ The token standard as a uint.
-    function checkErcStandard(address _token) public view liveContract returns (uint ercStandard_) {
+    function checkErcStandard(address _token) public view liveContract returns (uint16 ercStandard_) {
         if (_token.supportsInterface(0x80ac58cd)) {
             ercStandard_ = 721;
 
@@ -328,12 +303,6 @@ contract OverTheSama is ERC721Holder, ERC1155Holder {
         } else {
             ercStandard_ = 20; 
         } 
-    }
-
-    /// @notice Allows the owner to see the amount of fees collected.
-    /// @return collectedProtocolFees_ The current fees available for retreival.
-    function getCollectedProtocolFees() public view onlyOwner returns (uint collectedProtocolFees_) {
-        collectedProtocolFees_ = collectedProtocolFees;
     }
 
     /// @notice Returns the offer tied to the specified id.
