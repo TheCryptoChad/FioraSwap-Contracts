@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { OverTheSama, Test20_1, Test20_2, Test721_1, Test721_2, Test1155_1, Test1155_2 } from "../typechain-types";
+import { Test20_1, Test20_2, Test721_1, Test721_2, Test1155_1, Test1155_2 } from "../typechain-types";
 
 const fullStatusLog = async (account1: any, account2: any, t20_1Contract: Test20_1, t20_2Contract: Test20_2, t721_1Contract: Test721_1, t721_2Contract: Test721_2, t1155_1Contract: Test1155_1, t1155_2Contract: Test1155_2) => {
   console.log(`
@@ -40,13 +40,13 @@ describe("OverTheSama", function () {
 		const t1155_1Factory = await ethers.getContractFactory("Test1155_1");
 		const t1155_2Factory = await ethers.getContractFactory("Test1155_2");
 
-		const otsContract = await otsFactory.deploy();
-		const t20_1Contract = await t20_1Factory.deploy();
-		const t20_2Contract = await t20_2Factory.deploy();
-		const t721_1Contract = await t721_1Factory.deploy();
-		const t721_2Contract = await t721_2Factory.deploy();
-		const t1155_1Contract = await t1155_1Factory.deploy();
-		const t1155_2Contract = await t1155_2Factory.deploy();
+		const otsContract = await otsFactory.connect(account1).deploy();
+		const t20_1Contract = await t20_1Factory.connect(account1).deploy();
+		const t20_2Contract = await t20_2Factory.connect(account1).deploy();
+		const t721_1Contract = await t721_1Factory.connect(account1).deploy();
+		const t721_2Contract = await t721_2Factory.connect(account1).deploy();
+		const t1155_1Contract = await t1155_1Factory.connect(account1).deploy();
+		const t1155_2Contract = await t1155_2Factory.connect(account1).deploy();
 
 		await t20_1Contract.connect(account1).transfer(account2, ethers.parseEther("50"));
 
@@ -95,6 +95,30 @@ describe("OverTheSama", function () {
       {value: ethers.parseEther("20.1")}
     );
 
+    await otsContract.connect(account1).createOffer(
+      ethers.parseEther("3"),
+      ethers.parseEther("0.1"),
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      {value: ethers.parseEther("2.1")}
+    );
+
+    await otsContract.connect(account1).createOffer(
+      ethers.parseEther("1"),
+      ethers.parseEther("0.1"),
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      {value: ethers.parseEther("2.1")}
+    );
+
 		return { account1, account2, otsContract, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract, otsAddress, t20_1Address, t20_2Address, t721_1Address, t721_2Address, t1155_1Address, t1155_2Address };
 	}
 
@@ -112,15 +136,40 @@ describe("OverTheSama", function () {
       await otsContract.connect(account2).acceptOffer(
         BigInt(0),
         ethers.parseEther("0.1"),
-        {value: ethers.parseEther("10")}
+        {value: ethers.parseEther("10.1")}
       );
 
       console.log(await otsContract.getMemoryOffers(BigInt(0)));
 
+      await otsContract.connect(account2).acceptOffer(
+        BigInt(2),
+        ethers.parseEther("0.1"),
+        {value: ethers.parseEther("1.1")}
+      );
+
+      console.log(await otsContract.getMemoryOffers(BigInt(2)));
+
+      await otsContract.connect(account2).acceptOffer(
+        BigInt(1),
+        ethers.parseEther("0.1"),
+        {value: ethers.parseEther("3.1")}
+      );
+
+      console.log(await otsContract.getMemoryOffers(BigInt(1)));
+
       fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
       expect((await otsContract.connect(account1).getMemoryOffers(BigInt(0))).status).to.equal("completed");
-      expect(await otsContract.connect(account1).getCollectedProtocolFees()).to.equal(ethers.parseEther("0.2"));
+      expect(await otsContract.connect(account1).collectedProtocolFees()).to.equal(ethers.parseEther("0.6"));
+
+      console.log(ethers.formatEther(await account1.provider.getBalance(account1)))
+
+      await otsContract.connect(account1).retrieveProtocolFees();
+
+      console.log(ethers.formatEther(await account1.provider.getBalance(account1)))
+
+      expect(await otsContract.connect(account1).collectedProtocolFees()).to.equal(ethers.parseEther("0"));
+      //expect()
     });
   });
 
@@ -135,8 +184,8 @@ describe("OverTheSama", function () {
       fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
       expect((await otsContract.connect(account1).getMemoryOffers(BigInt(0))).status).to.equal("cancelled");
-      expect(await otsContract.connect(account1).getCollectedProtocolFees()).to.equal(ethers.parseEther("0.1"));
-      expect(await account1.provider.getBalance(otsAddress)).to.equal(ethers.parseEther("0.1"));
+      expect(await otsContract.connect(account1).collectedProtocolFees()).to.equal(ethers.parseEther("0.3"));
+      expect(await account1.provider.getBalance(otsAddress)).to.equal(ethers.parseEther("4.3"));
     });
   });
 });
