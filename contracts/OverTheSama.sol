@@ -221,7 +221,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         offer.status = "cancelled";
     }
 
-    function retrieveProtocolFees() public payable {
+    function retrieveProtocolFees() public payable onlyOwner {
         payable(msg.sender).transfer(collectedProtocolFees);
         collectedProtocolFees = 0;
     }
@@ -239,7 +239,11 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
     //     contractIsLive == false;
     // }
 
-    function setBaseProtocolFee(uint _baseProtocolFee) public {
+    function getOffers() public view returns (Offer[] memory) {
+        return offers;
+    }
+
+    function setBaseProtocolFee(uint _baseProtocolFee) public onlyOwner {
         baseProtocolFee = _baseProtocolFee;
     }
 
