@@ -46,8 +46,8 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
     function createOffer(
         uint _etherAmount2,
         uint _fee1,
-        address[] calldata _tokenAddresses1,
-        address[] calldata _tokenAddresses2,
+        address[] memory _tokenAddresses1,
+        address[] memory _tokenAddresses2,
         uint[][] memory _tokenAmounts1,
         uint[][] memory _tokenAmounts2,
         uint[][] memory _tokenIds1,
@@ -75,7 +75,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         newOffer.sent2 = false;
         newOffer.status = "active";
         acceptOffer(newOffer.id, newOffer.fee1);
-        ++offerCount;
+        offerCount++;
     }
 
     function acceptOffer(uint _id, uint _fee2) public payable {
@@ -91,7 +91,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
            tokenIds = offer.tokenIds1;
 
         } else {
-            require(msg.value == offer.etherAmount2 + _fee2, "Not enough ETH");
+            require(msg.value >= offer.etherAmount2 + _fee2, "Not enough ETH");
             offer.user2 = payable(msg.sender);
             offer.fee2 = _fee2;
             tokenAddresses = offer.tokenAddresses2;
@@ -99,10 +99,10 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
             tokenIds = offer.tokenIds2;
         }
 
+
         if (tokenAddresses.length > 0) {
-            uint i;
-            do {
-                uint ercStandard = checkErcStandard(tokenAddresses[i]);
+            for (uint8 i; i < tokenAddresses.length; i++) {
+                uint16 ercStandard = checkErcStandard(tokenAddresses[i]);
                 
                 if (ercStandard == 20) {
                     IERC20 erc20 = IERC20(tokenAddresses[i]);
@@ -116,23 +116,20 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                 
                 } else if (ercStandard == 1155) {
                     IERC1155 erc1155 = IERC1155(tokenAddresses[i]);
-                    uint j;
-                    do {
+                    for (uint8 j; j < tokenIds[i].length; j++) {
                         require(erc1155.balanceOf(msg.sender, tokenIds[i][j]) >= tokenAmounts[i][j], "Not enough ERC1155");
-                        unchecked {++j;}
-                    } while (j < tokenIds[i].length);
+                    }
                     erc1155.safeBatchTransferFrom(msg.sender, address(this), tokenIds[i], tokenAmounts[i], "");    
-                } 
-                unchecked {++i;} 
-            } while (i < tokenAddresses.length);
+                }  
+            }
         }
 
         if (msg.sender == offer.user1) {
-            unchecked {collectedProtocolFees += offer.fee1;}
+            collectedProtocolFees += offer.fee1;
             offer.sent1 = true;   
 
         } else {
-            unchecked {collectedProtocolFees += offer.fee2;}
+            collectedProtocolFees += offer.fee2;
             offer.sent2 = true;
             swapAndSendTokens(offer.id, 1);
             swapAndSendTokens(offer.id, 2);
@@ -141,7 +138,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         }
     }
 
-    function swapAndSendTokens(uint _id, uint _user) public payable {
+    function swapAndSendTokens(uint _id, uint8 _user) public payable {
         Offer memory offer = getMemoryOffers(_id);
         require(offer.sent1 == true, "Missing user1 tokens");
         require(offer.sent2 == true, "Missing user2 tokens");
@@ -172,9 +169,9 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         receiver.transfer(etherAmount);
 
         if (tokenAddresses.length > 0) {
-            uint i;
-            do {
-                uint ercStandard = checkErcStandard(tokenAddresses[i]);
+            for (uint8 i; i < tokenAddresses.length; i++) {
+                uint16 ercStandard = checkErcStandard(tokenAddresses[i]);
+                
                 if (ercStandard == 20) {
                     IERC20 erc20 = IERC20(tokenAddresses[i]);
                     erc20.transfer(receiver, tokenAmounts[i][0]);
@@ -187,8 +184,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                     IERC1155 erc1155 = IERC1155(tokenAddresses[i]);
                     erc1155.safeBatchTransferFrom(address(this), receiver, tokenIds[i], tokenAmounts[i], "");    
                 } 
-                unchecked {++i;}
-            } while (i < tokenAddresses.length);
+            }
         }
     }
 
@@ -201,9 +197,8 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         offer.user1.transfer(offer.etherAmount1);
 
         if (offer.tokenAddresses1.length > 0) {
-            uint i;
-            do {
-                uint ercStandard = checkErcStandard(offer.tokenAddresses1[i]);
+            for (uint8 i; i < offer.tokenAddresses1.length; i++) {
+                uint16 ercStandard = checkErcStandard(offer.tokenAddresses1[i]);
                 
                 if (ercStandard == 20) {
                     IERC20 erc20 = IERC20(offer.tokenAddresses1[i]);
@@ -217,8 +212,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                     IERC1155 erc1155 = IERC1155(offer.tokenAddresses1[i]);
                     erc1155.safeBatchTransferFrom(address(this), offer.user1, offer.tokenIds1[i], offer.tokenAmounts1[i], "");    
                 } 
-                unchecked {++i;}
-            } while (i < offer.tokenAddresses1.length);
+            }
         }
         offer.status = "cancelled";
     }
@@ -229,28 +223,27 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
     }
 
     function batchCancelOffers(uint _startingOffer, uint _endingOffer) public onlyOwner {
-        do {
-            Offer memory offer = getMemoryOffers(_startingOffer);
+        for (uint i = _startingOffer; i < _endingOffer; i++) {
+            Offer memory offer = getMemoryOffers(i);
             if (keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active"))) {
                 cancelOffer(offer.id);
-            }
-            unchecked {++_startingOffer;}
-        } while (_startingOffer < _endingOffer);
+            }     
+        }
     }
 
     function setBaseProtocolFee(uint _baseProtocolFee) public onlyOwner {
         baseProtocolFee = _baseProtocolFee;
     }
 
-    function checkErcStandard(address _token) public view returns (uint) {
+    function checkErcStandard(address _token) public view returns (uint16 ercStandard_) {
         if (_token.supportsInterface(0x80ac58cd)) {
-            return 721;
+            ercStandard_ = 721;
 
         } else if (_token.supportsInterface(0xd9b67a26)) {
-            return 1155;
+            ercStandard_ = 1155;
         
         } else {
-            return 20; 
+            ercStandard_ = 20; 
         } 
     }
 
