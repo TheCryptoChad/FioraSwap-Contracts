@@ -1,0 +1,80 @@
+/****************BASE******************/
+Deploy contract uses: 53001 gas
+Create offer uses: 3034120 gas
+Accept offer uses: 1273264 gas
+Cancel offer uses: 428625 gas
+Batch cancel offers uses: 2641433 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/****************UINT******************/
+Deploy contract uses: 53001 gas
+Create offer uses: 3033454 gas
+Accept offer uses: 1271856 gas
+Cancel offer uses: 428271 gas
+Batch cancel offers uses: 2638919 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/*********CALLDATA ARGUMENTS**********/
+Deploy contract uses: 53001 gas
+Create offer uses: 3028280 gas
+Accept offer uses: 1271844 gas
+Cancel offer uses: 428267 gas
+Batch cancel offers uses: 2638883 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/**********VAR++ TO ++VAR************/
+Deploy contract uses: 53001 gas
+Create offer uses: 3028204 gas
+Accept offer uses: 1271694 gas
+Cancel offer uses: 428227 gas
+Batch cancel offers uses: 2638558 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/**********UNCHECKED MATH************/
+eploy contract uses: 53001 gas
+Create offer uses: 3026524 gas
+Accept offer uses: 1268094 gas
+Cancel offer uses: 427267 gas
+Batch cancel offers uses: 2631838 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/**********DO WHILE LOOPS************/
+Deploy contract uses: 53001 gas
+Create offer uses: 3026140 gas
+Accept offer uses: 1267426 gas
+Cancel offer uses: 427014 gas
+Batch cancel offers uses: 2628539 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/*******CACHING ARRAY LENGTH*********/
+Deploy contract uses: 53001 gas
+Create offer uses: 3025765 gas
+Accept offer uses: 1267026 gas
+Cancel offer uses: 426115 gas
+Batch cancel offers uses: 2622272 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/**CHANGING OFFER ARRAY TO MAPPING**/
+Deploy contract uses: 53001 gas
+Create offer uses: 2981835 gas
+Accept offer uses: 1284194 gas
+Cancel offer uses: 423871 gas
+Batch cancel offers uses: 2615880 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+/***CHANGED BOOL AND STR TO UINT***/
+Deploy contract uses: 53001 gas
+Create offer uses: 3003881 gas
+Accept offer uses: 1283852 gas
+Cancel offer uses: 421309 gas
+Batch cancel offers uses: 2613960 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29034 gas

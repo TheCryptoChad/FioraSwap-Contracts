@@ -26,18 +26,24 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         uint[][] tokenAmounts2;
         uint[][] tokenIds1;
         uint[][] tokenIds2;
-        bool sent1;
-        bool sent2;
-        string status;
+        uint sent1;
+        uint sent2;
+        uint status;
     }
 
-    Offer[] public offers;
+    mapping(uint => Offer) public offers;
 
     uint public offerCount;
 
     uint public baseProtocolFee;
 
     uint public collectedProtocolFees;
+
+    event OfferCreated(uint indexed id);
+
+    event OfferAccepted(uint indexed id, address indexed user2, uint indexed fee2);
+
+    event OfferCancelled(uint indexed id);
 
     constructor() {
         baseProtocolFee = 0.1 ether;
@@ -56,26 +62,12 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         public
         payable 
     {
+        uint _offerCount = offerCount;
         uint _etherAmount1 = msg.value - _fee1;
-        Offer storage newOffer = offers.push();
-        newOffer.id = offers.length - 1;
-        newOffer.user1 = payable(msg.sender);
-        newOffer.user2 = payable(address(0));
-        newOffer.etherAmount1 = _etherAmount1;
-        newOffer.etherAmount2 = _etherAmount2;
-        newOffer.fee1 = _fee1;
-        newOffer.fee2 = baseProtocolFee;
-        newOffer.tokenAddresses1 = _tokenAddresses1;
-        newOffer.tokenAddresses2 = _tokenAddresses2;
-        newOffer.tokenAmounts1 = _tokenAmounts1;
-        newOffer.tokenAmounts2 = _tokenAmounts2;
-        newOffer.tokenIds1 = _tokenIds1;
-        newOffer.tokenIds2 = _tokenIds2;
-        newOffer.sent1 = false;
-        newOffer.sent2 = false;
-        newOffer.status = "active";
-        acceptOffer(newOffer.id, newOffer.fee1);
+        offers[_offerCount] = Offer(_offerCount, payable(msg.sender), payable(address(0)), _etherAmount1, _etherAmount2, _fee1, 0, _tokenAddresses1, _tokenAddresses2, _tokenAmounts1, _tokenAmounts2, _tokenIds1, _tokenIds2, 1, 1, 1);
+        acceptOffer(_offerCount, _fee1);
         ++offerCount;
+        emit OfferCreated(_offerCount);
     }
 
     function acceptOffer(uint _id, uint _fee2) public payable {
@@ -99,7 +91,9 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
             tokenIds = offer.tokenIds2;
         }
 
-        if (tokenAddresses.length > 0) {
+        uint length = tokenAddresses.length;
+
+        if (length != 0) {
             uint i;
             do {
                 uint ercStandard = checkErcStandard(tokenAddresses[i]);
@@ -117,36 +111,36 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                 } else if (ercStandard == 1155) {
                     IERC1155 erc1155 = IERC1155(tokenAddresses[i]);
                     uint j;
+                    uint idsLength = tokenIds[i].length;
                     do {
                         require(erc1155.balanceOf(msg.sender, tokenIds[i][j]) >= tokenAmounts[i][j], "Not enough ERC1155");
                         unchecked {++j;}
-                    } while (j < tokenIds[i].length);
+                    } while (j < idsLength);
                     erc1155.safeBatchTransferFrom(msg.sender, address(this), tokenIds[i], tokenAmounts[i], "");    
                 } 
                 unchecked {++i;} 
-            } while (i < tokenAddresses.length);
+            } while (i < length);
         }
 
         if (msg.sender == offer.user1) {
             unchecked {collectedProtocolFees += offer.fee1;}
-            offer.sent1 = true;   
+            offer.sent1 = 2;   
 
         } else {
             unchecked {collectedProtocolFees += offer.fee2;}
-            offer.sent2 = true;
+            offer.sent2 = 2;
             swapAndSendTokens(offer.id, 1);
             swapAndSendTokens(offer.id, 2);
-            offer.status = "completed";
+            offer.status = 2;
+            emit OfferAccepted(_id, msg.sender, _fee2);
 
         }
     }
 
     function swapAndSendTokens(uint _id, uint _user) public payable {
         Offer memory offer = getMemoryOffers(_id);
-        require(offer.sent1 == true, "Missing user1 tokens");
-        require(offer.sent2 == true, "Missing user2 tokens");
         require(msg.sender == offer.user2, "Not a participant");
-        require(keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active")), "Offer inactive");
+        require(offer.status == 1, "Inactive offer");
 
         address payable receiver;
         uint etherAmount;
@@ -171,7 +165,9 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
 
         receiver.transfer(etherAmount);
 
-        if (tokenAddresses.length > 0) {
+        uint length = tokenAddresses.length;
+
+        if (length != 0) {
             uint i;
             do {
                 uint ercStandard = checkErcStandard(tokenAddresses[i]);
@@ -188,19 +184,20 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                     erc1155.safeBatchTransferFrom(address(this), receiver, tokenIds[i], tokenAmounts[i], "");    
                 } 
                 unchecked {++i;}
-            } while (i < tokenAddresses.length);
+            } while (i < length);
         }
     }
 
     function cancelOffer(uint _id) public payable {
         Offer storage offer = getStorageOffers(_id);
         require(msg.sender == offer.user1 || msg.sender == owner(), "Not offer creator");
-        require(offer.sent1 == true, "Missing user1 tokens");
-        require(keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active")), "Offer inactive");
+        require(offer.status == 1, "Offer inactive");
         
         offer.user1.transfer(offer.etherAmount1);
 
-        if (offer.tokenAddresses1.length > 0) {
+        uint length = offer.tokenAddresses1.length;
+
+        if (length != 0) {
             uint i;
             do {
                 uint ercStandard = checkErcStandard(offer.tokenAddresses1[i]);
@@ -218,9 +215,10 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
                     erc1155.safeBatchTransferFrom(address(this), offer.user1, offer.tokenIds1[i], offer.tokenAmounts1[i], "");    
                 } 
                 unchecked {++i;}
-            } while (i < offer.tokenAddresses1.length);
+            } while (i < length);
         }
-        offer.status = "cancelled";
+        offer.status = 3;
+        emit OfferCancelled(_id);
     }
 
     function retrieveProtocolFees() public payable onlyOwner {
@@ -228,17 +226,17 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
         collectedProtocolFees = 0;
     }
 
-    function batchCancelOffers(uint _startingOffer, uint _endingOffer) public onlyOwner {
+    function batchCancelOffers(uint _startingOffer, uint _endingOffer) public payable onlyOwner {
         do {
             Offer memory offer = getMemoryOffers(_startingOffer);
-            if (keccak256(abi.encodePacked(offer.status)) == keccak256(abi.encodePacked("active"))) {
+            if (offer.status == 1) {
                 cancelOffer(offer.id);
             }
             unchecked {++_startingOffer;}
         } while (_startingOffer < _endingOffer);
     }
 
-    function setBaseProtocolFee(uint _baseProtocolFee) public onlyOwner {
+    function setBaseProtocolFee(uint _baseProtocolFee) public payable onlyOwner {
         baseProtocolFee = _baseProtocolFee;
     }
 
@@ -255,12 +253,10 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
     }
 
     function getMemoryOffers(uint _id) public view returns (Offer memory) {
-        require(_id < offers.length, "Offer does not exist");
         return offers[_id];
     }
 
     function getStorageOffers(uint _id) private view returns (Offer storage) {
-        require(_id < offers.length, "Offer does not exist");
         return offers[_id];
     }
 }
