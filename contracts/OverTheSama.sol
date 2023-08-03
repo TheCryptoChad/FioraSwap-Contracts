@@ -64,7 +64,7 @@ contract OverTheSama is ERC721Holder, ERC1155Holder, Ownable {
     {
         uint _offerCount = offerCount;
         uint _etherAmount1 = msg.value - _fee1;
-        offers[_offerCount] = Offer(_offerCount, payable(msg.sender), payable(address(0)), _etherAmount1, _etherAmount2, _fee1, 0, _tokenAddresses1, _tokenAddresses2, _tokenAmounts1, _tokenAmounts2, _tokenIds1, _tokenIds2, 1, 1, 1);
+        offers[_offerCount] = Offer(_offerCount, payable(msg.sender), payable(address(0)), _etherAmount1, _etherAmount2, _fee1, 1, _tokenAddresses1, _tokenAddresses2, _tokenAmounts1, _tokenAmounts2, _tokenIds1, _tokenIds2, 1, 1, 1);
         acceptOffer(_offerCount, _fee1);
         ++offerCount;
         emit OfferCreated(_offerCount);
