@@ -1,0 +1,11 @@
+/****************BASE******************/
+Deploy contract uses: 53001 gas
+Create offer uses: 3034120 gas
+Accept offer uses: 1273264 gas
+Cancel offer uses: 428625 gas
+Batch cancel offers uses: 2641433 gas
+Retrieve fees uses: 30611 gas
+Set fees uses: 29058 gas
+
+Deploy offer template uses: 57153 gas
+Deploy admin contract uses: 53371 gas

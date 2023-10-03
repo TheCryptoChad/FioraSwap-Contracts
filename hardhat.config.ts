@@ -3,11 +3,11 @@ import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
 	solidity: {
-		compilers: [{ version: "0.8.9" }, { version: "0.8.19" }],
+		version: "0.8.19" ,
 		settings: {
 			optimizer: {
 				enabled: true,
-				runs: 1000000,
+				runs: 100,
 			},
 		},
 	},

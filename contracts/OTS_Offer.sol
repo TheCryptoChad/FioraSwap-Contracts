@@ -1,68 +1,73 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "./OTS_Admin.sol";
 import "./OTS_Util.sol";
 
 contract OTS_Offer is ERC721Holder, ERC1155Holder {
     OTS_Util.Offer public offer;
-
     address private otsAdmin;
 
-    constructor(OTS_Util.Offer memory _offer) {
-        offer = _offer;
-        otsAdmin = msg.sender;
+    modifier activeOffer {
+        require(offer.status == OTS_Util.OfferStatus.ACTIVE);
+        _;
     }
 
-    function acceptOffer(uint256 _takerFee) public payable {
-        OTS_Util.Offer memory cachedOffer = offer;
-        require(cachedOffer.status == OTS_Util.OfferStatus.ACTIVE);
-        require(msg.value >= cachedOffer.takerTokenAmounts[0][0] + _takerFee);
+    constructor(OTS_Util.Offer memory _offer, address _otsAdmin) payable {
+        offer = _offer;
+        otsAdmin = _otsAdmin;
+        transferTokens(_offer, OTS_Util.OfferParticipant.MAKER, _offer.maker, address(this));
+    }
 
+    function acceptOffer(uint256 _takerFee) public payable activeOffer {
+        OTS_Util.Offer memory cachedOffer = offer;
+        require(msg.value >= cachedOffer.takerTokenAmounts[0][0] + _takerFee);
         offer.taker = msg.sender;
-        transferTokens(OTS_Util.OfferParticipant.TAKER, msg.sender, cachedOffer.maker);
-        transferTokens(OTS_Util.OfferParticipant.MAKER, address(this), msg.sender);
+        offer.takerFee = _takerFee;
+        transferTokens(cachedOffer, OTS_Util.OfferParticipant.TAKER, msg.sender, cachedOffer.maker);
+        transferTokens(cachedOffer, OTS_Util.OfferParticipant.MAKER, address(this), msg.sender);
         offer.status = OTS_Util.OfferStatus.COMPLETED;
+        OTS_Admin(otsAdmin).acceptOffer(cachedOffer.id, msg.sender, _takerFee);
     } 
 
-    function cancelOffer() public payable {
+    function cancelOffer() public activeOffer {
+        //AuthorizedCheck
         OTS_Util.Offer memory cachedOffer = offer;
-        require(msg.sender == cachedOffer.maker || msg.sender == otsAdmin);
-        transferTokens(OTS_Util.OfferParticipant.MAKER, address(this), cachedOffer.maker);
+        transferTokens(cachedOffer, OTS_Util.OfferParticipant.MAKER, address(this), cachedOffer.maker);
         offer.status = OTS_Util.OfferStatus.CANCELLED;
+        OTS_Admin(otsAdmin).cancelOffer(cachedOffer.id);
     }
 
-    function transferTokens(OTS_Util.OfferParticipant _tokens, address _from, address _to) public payable {
-        OTS_Util.Offer memory cachedOffer = offer;
-        require(msg.sender == cachedOffer.maker || msg.sender == cachedOffer.taker || msg.sender == otsAdmin);
+    function transferTokens(OTS_Util.Offer memory _cachedOffer, OTS_Util.OfferParticipant _tokens, address _from, address _to) internal {
+        //AuthorizedCheck
         OTS_Util.TokenType[] memory tokenTypes;
         address[] memory tokenAddresses;
         uint256[][] memory tokenIds;
         uint256[][] memory tokenAmounts;
 
         if (_tokens == OTS_Util.OfferParticipant.MAKER) {
-            tokenTypes = cachedOffer.makerTokenTypes;
-            tokenAddresses = cachedOffer.makerTokenAddresses;
-            tokenIds = cachedOffer.makerTokenIds;
-            tokenAmounts = cachedOffer.makerTokenAmounts;
+            tokenTypes = _cachedOffer.makerTokenTypes;
+            tokenAddresses = _cachedOffer.makerTokenAddresses;
+            tokenIds = _cachedOffer.makerTokenIds;
+            tokenAmounts = _cachedOffer.makerTokenAmounts;
         
         } else {
-            tokenTypes = cachedOffer.takerTokenTypes;
-            tokenAddresses = cachedOffer.takerTokenAddresses;
-            tokenIds = cachedOffer.takerTokenIds;
-            tokenAmounts = cachedOffer.takerTokenAmounts;
+            tokenTypes = _cachedOffer.takerTokenTypes;
+            tokenAddresses = _cachedOffer.takerTokenAddresses;
+            tokenIds = _cachedOffer.takerTokenIds;
+            tokenAmounts = _cachedOffer.takerTokenAmounts;
         }
 
         uint256 length = tokenTypes.length;
         uint256 i;
 
         while (i < length) {
-            if (tokenTypes[i] == OTS_Util.TokenType.NATIVE && _from == address(this)) {
+            if (tokenTypes[i] == OTS_Util.TokenType.NATIVE && _from != _cachedOffer.maker) {
                 payable(_to).transfer(tokenAmounts[i][0]);
 
             } else if (tokenTypes[i] == OTS_Util.TokenType.ERC20) {
@@ -71,7 +76,7 @@ contract OTS_Offer is ERC721Holder, ERC1155Holder {
             } else if (tokenTypes[i] == OTS_Util.TokenType.ERC721) {
                 IERC721(tokenAddresses[i]).safeTransferFrom(_from, _to, tokenIds[i][0], "");
 
-            } else {
+            } else if (tokenTypes[i] == OTS_Util.TokenType.ERC721) {
                 IERC1155(tokenAddresses[i]).safeBatchTransferFrom(_from, _to, tokenIds[i], tokenAmounts[i], "");
             }
 
