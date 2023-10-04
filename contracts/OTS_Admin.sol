@@ -2,12 +2,14 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/access/AccessControlDefaultAdminRules.sol";
+import "@openzeppelin/contracts/utils/Create2.sol";
 import "./OTS_Offer.sol";
 import "./OTS_Util.sol";
 
 contract OTS_Admin is AccessControlDefaultAdminRules {
     mapping (uint256 => address) private offers;
     address private offerTemplate;
+    address private otsOracle;
     uint256 private offerCount = 1;
     uint256 private collectedFees;
 
@@ -20,12 +22,14 @@ contract OTS_Admin is AccessControlDefaultAdminRules {
         _;
     }
 
-    constructor(address _offerTemplate) AccessControlDefaultAdminRules(15 days, msg.sender) {
+    constructor(address _offerTemplate, address _otsOracle) AccessControlDefaultAdminRules(15 days, msg.sender) {
         offerTemplate = _offerTemplate;
+        otsOracle = _otsOracle;
     }
 
-    function createOffer(OTS_Util.Offer memory _offer, address _predictedAddress) public payable {
+    function createOffer(OTS_Util.Offer memory _offer, address _predictedAddress, bytes32 _message, bytes memory _signature) public payable {
         require(msg.value >= _offer.makerTokenAmounts[0][0] + _offer.makerFee);
+        require(otsOracle == ECDSA.recover(ECDSA.toEthSignedMessageHash(_message), _signature));
         uint256 cachedOfferCount = offerCount;
         _offer.id = cachedOfferCount;
         address offerAddress = deployOfferContract(_offer);
@@ -37,8 +41,8 @@ contract OTS_Admin is AccessControlDefaultAdminRules {
 
     function deployOfferContract(OTS_Util.Offer memory _offer) internal returns (address) {
         bytes32 salt = keccak256(abi.encode(_offer));
-        OTS_Offer offerContract = new OTS_Offer{value: _offer.makerTokenAmounts[0][0], salt: salt}(_offer, address(this));
-        return address(offerContract);
+        bytes memory bytecode = abi.encodePacked(type(OTS_Offer).creationCode, abi.encode(_offer, address(this), otsOracle));
+        return Create2.deploy(_offer.makerTokenAmounts[0][0], salt, bytecode);
     }
 
     function acceptOffer(uint256 _id, address _taker, uint256 _takerFee) external isOffer(_id) {
@@ -67,17 +71,30 @@ contract OTS_Admin is AccessControlDefaultAdminRules {
         collectedFees = 0;
     }
 
-    function predictOfferAddress(OTS_Util.Offer memory _offer) public view returns (address) {
+    function predictOfferAddress(OTS_Util.Offer memory _offer) external view returns (address) {
         bytes32 salt = keccak256(abi.encode(_offer));
-        bytes memory contractBytecode = abi.encodePacked(type(OTS_Offer).creationCode, abi.encode(_offer, address(this)));
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(contractBytecode)));
-        return address(uint160(uint(hash)));
+        bytes32 bytecodeHash = keccak256(abi.encodePacked(type(OTS_Offer).creationCode, abi.encode(_offer, address(this))));
+        return Create2.computeAddress(salt, bytecodeHash);
     }
 
-    function batchCancelOffers(uint256 _startId, uint256 _endId) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function batchCancelOffers(uint256 _startId, uint256 _endId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         do {
             OTS_Offer(offers[_startId]).cancelOffer();
             unchecked{++_startId;}
         } while(_startId <= _endId);
+    }
+
+    function beginDefaultAdminTransfer(address newAdmin) public override onlyRole(DEFAULT_ADMIN_ROLE) {
+        _beginDefaultAdminTransfer(newAdmin);
+    }
+
+    function cancelDefaultAdminTransfer() public override onlyRole(DEFAULT_ADMIN_ROLE) {
+        _cancelDefaultAdminTransfer();
+    }
+
+    function acceptDefaultAdminTransfer() public override {
+        (address newDefaultAdmin, ) = pendingDefaultAdmin();
+        require(_msgSender() == newDefaultAdmin, "AccessControl: pending admin must accept");
+        _acceptDefaultAdminTransfer();
     }
 }
