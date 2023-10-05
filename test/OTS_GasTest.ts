@@ -60,15 +60,15 @@ describe("OverTheSama", function () {
 		const t1155_1Factory = await ethers.getContractFactory("Test1155_1");
 		const t1155_2Factory = await ethers.getContractFactory("Test1155_2");
 
-    const otsOfferContract = await otsOfferFactory.connect(account1).deploy(offer0, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000");
+    const otsOfferContract = await otsOfferFactory.connect(account1).deploy(offer0, "0x0000000000000000000000000000000000000000");
     const otsOfferContractAddress = await otsOfferContract.getAddress();
-		const otsAdminContract = await otsAdminFactory.connect(account1).deploy(otsOfferContractAddress, account2.address);
+		const otsAdminContract = await otsAdminFactory.connect(account1).deploy(otsOfferContractAddress);
 
-    const otsOfferContractGas = await ethers.provider.estimateGas({data: otsOfferContract.interface.encodeDeploy([offer0, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000"])});
-    const otsAdminContractGas = await ethers.provider.estimateGas({data: otsAdminContract.interface.encodeDeploy([otsOfferContractAddress, account2.address])});
+    const otsOfferContractGas = await ethers.provider.estimateGas({data: otsOfferContract.interface.encodeDeploy([offer0, "0x0000000000000000000000000000000000000000"])});
+    const otsAdminContractGas = await ethers.provider.estimateGas({data: otsAdminContract.interface.encodeDeploy([otsOfferContractAddress])});
 
-    // console.log(`Deploy offer template uses: ${otsOfferContractGas} gas`);
-    // console.log(`Deploy admin contract uses: ${otsAdminContractGas} gas`);
+    console.log(`Deploy offer template uses: ${otsOfferContractGas} gas`);
+    console.log(`Deploy admin contract uses: ${otsAdminContractGas} gas`);
 
 		const t20_1Contract = await t20_1Factory.connect(account1).deploy();
 		const t20_2Contract = await t20_2Factory.connect(account1).deploy();
@@ -104,8 +104,11 @@ describe("OverTheSama", function () {
     const t1155_1Address = await t1155_1Contract.getAddress();
     const t1155_2Address = await t1155_2Contract.getAddress();
 
+    //Comment & uncomment the following offer examples to test different scenarios.
+
+    /************THIS OFFER HANDLES USERS SENDING NOTHING. ESSENTIALLY THE MOST BASIC SCENARIO***********************/
     // const offer1: OTS_Util.OfferStruct = {
-    //   id: BigInt(0),
+    //   id: BigInt(1),
     //   maker: account1,
     //   taker: "0x0000000000000000000000000000000000000000",
     //   makerFee: ethers.parseEther("0"),
@@ -116,8 +119,8 @@ describe("OverTheSama", function () {
     //   takerTokenAddresses: ["0x0000000000000000000000000000000000000000"],
     //   makerTokenIds: [[BigInt(0)]],
     //   takerTokenIds: [[BigInt(0)]],
-    //   makerTokenAmounts: [[ethers.parseEther("1")]],
-    //   takerTokenAmounts: [[ethers.parseEther("1")]],
+    //   makerTokenAmounts: [[ethers.parseEther("0")]],
+    //   takerTokenAmounts: [[ethers.parseEther("0")]],
     //   makerTokenChainIds: [BigInt(0)],
     //   takerTokenChainIds: [BigInt(0)],
     //   makerSent: true,
@@ -125,11 +128,13 @@ describe("OverTheSama", function () {
     //   status: BigInt(0)
     // }
 
+    /************THIS OFFER HANDLES 1 NATIVE, 2 ERC20, 2 ERC721 (2 IDS EACH), 2 ERC1155 (3 IDS EACH). ESSENTIALLY THE MOST COMPLEX SCENARIO***********************/
+
     const offer1: OTS_Util.OfferStruct = {
       id: BigInt(1),
       maker: account1,
       taker: "0x0000000000000000000000000000000000000000",
-      makerFee: ethers.parseEther("0"),
+      makerFee: ethers.parseEther("10"),
       takerFee: ethers.parseEther("0"),
       makerTokenTypes: [BigInt(0), BigInt(1), BigInt(1), BigInt(2), BigInt(2), BigInt(2), BigInt(2), BigInt(3), BigInt(3)],
       takerTokenTypes: [BigInt(0), BigInt(1), BigInt(1), BigInt(2), BigInt(2), BigInt(2), BigInt(2), BigInt(3), BigInt(3)],
@@ -161,21 +166,21 @@ describe("OverTheSama", function () {
     const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
     const signedMessage: string = await account2.signMessage(messageBytes);
 
-    const createOffer = await otsAdminContract.connect(account1).createOffer(offer1, offerAddress, messageHash, signedMessage, {value : offer1.makerTokenAmounts[0][0]});
+    const createOffer = await otsAdminContract.connect(account1).createOffer(offer1, offerAddress, {value : BigInt(Number(offer1.makerTokenAmounts[0][0])+Number(offer1.makerFee))});
 
     const createOfferGas = await createOffer.wait();
 
-    // console.log(`Create offer uses: ${createOfferGas?.gasUsed} gas`);
+    console.log(`Create offer uses: ${createOfferGas?.gasUsed} gas`);
 
     //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
-		return { account1, account2, offer1, offerAddress, otsAdminContract, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract, t20_1Address, t20_2Address, t721_1Address, t721_2Address, t1155_1Address, t1155_2Address };
+		return { account1, account2, offer1, otsAdminAddress, offerAddress, otsAdminContract, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract, t20_1Address, t20_2Address, t721_1Address, t721_2Address, t1155_1Address, t1155_2Address };
 	}
 
 
 	describe("Accept Offer", async function () {
     it("User 2 Accepts Offer", async function () {
-      const { offer1, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+      const { offer1, otsAdminContract, otsAdminAddress, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
       await t20_1Contract.connect(account2).approve(offerAddress, ethers.parseEther("30"));
       await t20_2Contract.connect(account2).approve(offerAddress, ethers.parseEther("30"));
@@ -191,83 +196,84 @@ describe("OverTheSama", function () {
       const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
       const signedMessage: string = await account2.signMessage(messageBytes);
 
-      const acceptOffer = await offerContract.acceptOffer(BigInt(0), messageHash, signedMessage, {value: offer1.takerTokenAmounts[0][0]});
+      const takerFee: bigint = ethers.parseEther("3");
+
+      const acceptOffer = await offerContract.acceptOffer(takerFee, {value: BigInt(Number(offer1.takerTokenAmounts[0][0])+Number(takerFee))});
 
       const acceptOfferGas = await acceptOffer.wait();
 
-      // console.log(`Accept offer uses: ${acceptOfferGas?.gasUsed} gas`);
+      console.log(`Accept offer uses: ${acceptOfferGas?.gasUsed} gas`);
 
       //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
     });
   });
 
 
-  // describe("Cancel Offer", async function () {
-  //   it("User 1 Cancels Offer", async function () {
-  //     const { offer1, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+  describe("Cancel Offer", async function () {
+    it("User 1 Cancels Offer", async function () {
+      const { offer1, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
-  //     const offerAbi = require('../artifacts/contracts/OTS_Offer.sol/OTS_Offer.json').abi;
-  //     const offerContract = new ethers.Contract(offerAddress, offerAbi, account2);
-  //     const cancelOffer = await offerContract.cancelOffer();
+      const offerAbi = require('../artifacts/contracts/OTS_Offer.sol/OTS_Offer.json').abi;
+      const offerContract = new ethers.Contract(offerAddress, offerAbi, account1);
+      const cancelOffer = await offerContract.cancelOffer();
 
-  //     const cancelOfferGas = await cancelOffer.wait();
+      const cancelOfferGas = await cancelOffer.wait();
 
-  //     console.log(`Cancel offer uses: ${cancelOfferGas?.gasUsed} gas`);
+      console.log(`Cancel offer uses: ${cancelOfferGas?.gasUsed} gas`);
 
-  //     await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
-  //   });
-  // });
-
-
-  // describe("Batch Cancel Offers", async function () {
-  //   it("Owner Batch Cancels Offers", async function () {
-  //     const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
-
-  //     for(let i = 2; i < 11; i++) {
-  //       const offer: OTS_Util.OfferStruct = {
-  //         id: BigInt(i),
-  //         maker: account1,
-  //         taker: "0x0000000000000000000000000000000000000000",
-  //         makerFee: ethers.parseEther("0"),
-  //         takerFee: ethers.parseEther("0"),
-  //         makerTokenTypes: [BigInt(0)],
-  //         takerTokenTypes: [BigInt(0)],
-  //         makerTokenAddresses: ["0x0000000000000000000000000000000000000000"],
-  //         takerTokenAddresses: ["0x0000000000000000000000000000000000000000"],
-  //         makerTokenIds: [[BigInt(0)]],
-  //         takerTokenIds: [[BigInt(0)]],
-  //         makerTokenAmounts: [[ethers.parseEther("1")]],
-  //         takerTokenAmounts: [[ethers.parseEther("1")]],
-  //         makerTokenChainIds: [BigInt(0)],
-  //         takerTokenChainIds: [BigInt(0)],
-  //         makerSent: true,
-  //         takerSent: false,
-  //         status: BigInt(0)
-  //       }
-  //       const offerAddr = await otsAdminContract.predictOfferAddress(offer);
-  //       await otsAdminContract.connect(account1).createOffer(offer, offerAddr, {value : offer.makerTokenAmounts[0][0]});
-  //     }
-
-  //     const cancelOffers = await otsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
-  //     const cancelOffersGas = await cancelOffers.wait();
-
-  //     console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
-
-  //     await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
-  //   });
-  // });
+      //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+    });
+  });
 
 
-  // describe("Retrieve Fees", async function () {
-  //   it("Owner retrieves fees", async function () {
-  //     const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+  describe("Batch Cancel Offers", async function () {
+    it("Owner Batch Cancels Offers", async function () {
+      const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
-  //     const retrieveFees = await otsAdminContract.connect(account1).collectFees();
+      for(let i = 2; i < 11; i++) {
+        const offer: OTS_Util.OfferStruct = {
+          id: BigInt(i),
+          maker: account1,
+          taker: "0x0000000000000000000000000000000000000000",
+          makerFee: ethers.parseEther("0"),
+          takerFee: ethers.parseEther("0"),
+          makerTokenTypes: [BigInt(0)],
+          takerTokenTypes: [BigInt(0)],
+          makerTokenAddresses: ["0x0000000000000000000000000000000000000000"],
+          takerTokenAddresses: ["0x0000000000000000000000000000000000000000"],
+          makerTokenIds: [[BigInt(0)]],
+          takerTokenIds: [[BigInt(0)]],
+          makerTokenAmounts: [[ethers.parseEther("1")]],
+          takerTokenAmounts: [[ethers.parseEther("1")]],
+          makerTokenChainIds: [BigInt(0)],
+          takerTokenChainIds: [BigInt(0)],
+          makerSent: true,
+          takerSent: false,
+          status: BigInt(0)
+        }
+        const offerAddr = await otsAdminContract.predictOfferAddress(offer);
+        await otsAdminContract.connect(account1).createOffer(offer, offerAddr, {value : offer.makerTokenAmounts[0][0]});
+      }
 
-  //     const retrieveFeesGas = await retrieveFees.wait();
+      const cancelOffers = await otsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
+      const cancelOffersGas = await cancelOffers.wait();
 
-  //     console.log(`Retrieve fees uses: ${retrieveFeesGas?.gasUsed} gas`);
+      console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
 
-  //   });
-  // });
+      //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+    });
+  });
+
+
+  describe("Retrieve Fees", async function () {
+    it("Owner retrieves fees", async function () {
+      const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+
+      const retrieveFees = await otsAdminContract.connect(account1).collectFees();
+
+      const retrieveFeesGas = await retrieveFees.wait();
+
+      console.log(`Retrieve fees uses: ${retrieveFeesGas?.gasUsed} gas`);
+    });
+  });
 });

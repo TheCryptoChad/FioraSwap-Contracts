@@ -6,43 +6,38 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./OTS_Admin.sol";
 import "./OTS_Util.sol";
-import "hardhat/console.sol";
 
 contract OTS_Offer is ERC721Holder, ERC1155Holder {
     OTS_Util.Offer public offer;
     address private otsAdmin;
-    address private otsOracle;
 
     modifier activeOffer {
         require(offer.status == OTS_Util.OfferStatus.ACTIVE);
         _;
     }
 
-    constructor(OTS_Util.Offer memory _offer, address _otsAdmin, address _otsOracle) payable {
+    constructor(OTS_Util.Offer memory _offer, address _otsAdmin) payable {
         offer = _offer;
         otsAdmin = _otsAdmin;
-        otsOracle = _otsOracle;
         transferTokens(_offer, OTS_Util.OfferParticipant.MAKER, _offer.maker, address(this));
     }
 
-    function acceptOffer(uint256 _takerFee, bytes memory _message, bytes memory _signature) public payable activeOffer {
+    function acceptOffer(uint256 _takerFee) public payable activeOffer {
         require(msg.value >= offer.takerTokenAmounts[0][0] + _takerFee);
-        require(otsOracle == ECDSA.recover(ECDSA.toEthSignedMessageHash(keccak256(_message)), _signature));
         offer.taker = msg.sender;
         offer.takerFee = _takerFee;
         OTS_Util.Offer memory cachedOffer = offer;
         transferTokens(cachedOffer, OTS_Util.OfferParticipant.TAKER, msg.sender, cachedOffer.maker);
         transferTokens(cachedOffer, OTS_Util.OfferParticipant.MAKER, address(this), msg.sender);
         offer.status = OTS_Util.OfferStatus.COMPLETED;
-        OTS_Admin(otsAdmin).acceptOffer(cachedOffer.id, msg.sender, _takerFee);
+        OTS_Admin(otsAdmin).acceptOffer{value: _takerFee}(cachedOffer.id, msg.sender, _takerFee);
     } 
 
     function cancelOffer() public activeOffer {
         OTS_Util.Offer memory cachedOffer = offer;
-        require(msg.sender == cachedOffer.maker);
+        require(msg.sender == cachedOffer.maker || msg.sender == otsAdmin);
         transferTokens(cachedOffer, OTS_Util.OfferParticipant.MAKER, address(this), cachedOffer.maker);
         offer.status = OTS_Util.OfferStatus.CANCELLED;
         OTS_Admin(otsAdmin).cancelOffer(cachedOffer.id);
