@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "./OTS_Offer.sol";
@@ -12,7 +12,7 @@ contract OTS_Admin {
     uint256 private collectedFees;
 
     event CreateOffer(uint256 indexed id);
-    event AcceptOffer(uint256 indexed id, address indexed taker, uint256 takerFee);
+    event AcceptOffer(uint256 indexed id, address indexed taker, uint256 indexed takerFee);
     event CancelOffer(uint256 indexed id);
 
     modifier isOffer(uint256 _id) {
