@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Test20_1, Test20_2, Test721_1, Test721_2, Test1155_1, Test1155_2 } from "../typechain-types";
-import { OTS_Util } from "../typechain-types/contracts/OTS_Offer";
+import { FS_Util } from "../typechain-types/contracts/FS_Offer";
 
 const fullStatusLog = async (account1: any, account2: any, t20_1Contract: Test20_1, t20_2Contract: Test20_2, t721_1Contract: Test721_1, t721_2Contract: Test721_2, t1155_1Contract: Test1155_1, t1155_2Contract: Test1155_2) => {
   console.log(`
@@ -30,7 +30,7 @@ describe("OverTheSama", function () {
 	async function deployContractsFixture() {
 		const [account1, account2] = await ethers.getSigners();
 
-    const offer0: OTS_Util.OfferStruct = {
+    const offer0: FS_Util.OfferStruct = {
       id: BigInt(0),
       maker: "0x0000000000000000000000000000000000000000",
       taker: "0x0000000000000000000000000000000000000000",
@@ -51,8 +51,8 @@ describe("OverTheSama", function () {
       status: BigInt(0)
     }
 
-    const otsOfferFactory = await ethers.getContractFactory("OTS_Offer");
-		const otsAdminFactory = await ethers.getContractFactory("OTS_Admin");
+    const fsOfferFactory = await ethers.getContractFactory("FS_Offer");
+		const fsAdminFactory = await ethers.getContractFactory("FS_Admin");
 		const t20_1Factory = await ethers.getContractFactory("Test20_1");
 		const t20_2Factory = await ethers.getContractFactory("Test20_2");
 		const t721_1Factory = await ethers.getContractFactory("Test721_1");
@@ -60,15 +60,15 @@ describe("OverTheSama", function () {
 		const t1155_1Factory = await ethers.getContractFactory("Test1155_1");
 		const t1155_2Factory = await ethers.getContractFactory("Test1155_2");
 
-    const otsOfferContract = await otsOfferFactory.connect(account1).deploy(offer0, "0x0000000000000000000000000000000000000000");
-    const otsOfferContractAddress = await otsOfferContract.getAddress();
-		const otsAdminContract = await otsAdminFactory.connect(account1).deploy(otsOfferContractAddress);
+    const fsOfferContract = await fsOfferFactory.connect(account1).deploy(offer0, "0x0000000000000000000000000000000000000000");
+    const fsOfferContractAddress = await fsOfferContract.getAddress();
+		const fsAdminContract = await fsAdminFactory.connect(account1).deploy(fsOfferContractAddress);
 
-    const otsOfferContractGas = await ethers.provider.estimateGas({data: otsOfferContract.interface.encodeDeploy([offer0, "0x0000000000000000000000000000000000000000"])});
-    const otsAdminContractGas = await ethers.provider.estimateGas({data: otsAdminContract.interface.encodeDeploy([otsOfferContractAddress])});
+    const fsOfferContractGas = await ethers.provider.estimateGas({data: fsOfferContract.interface.encodeDeploy([offer0, "0x0000000000000000000000000000000000000000"])});
+    const fsAdminContractGas = await ethers.provider.estimateGas({data: fsAdminContract.interface.encodeDeploy([fsOfferContractAddress])});
 
-    console.log(`Deploy offer template uses: ${otsOfferContractGas} gas`);
-    console.log(`Deploy admin contract uses: ${otsAdminContractGas} gas`);
+    console.log(`Deploy offer template uses: ${fsOfferContractGas} gas`);
+    console.log(`Deploy admin contract uses: ${fsAdminContractGas} gas`);
 
 		const t20_1Contract = await t20_1Factory.connect(account1).deploy();
 		const t20_2Contract = await t20_2Factory.connect(account1).deploy();
@@ -96,7 +96,7 @@ describe("OverTheSama", function () {
 		await t1155_2Contract.connect(account1).mintBatch(account2, [BigInt(1), BigInt(2), BigInt(3)], [BigInt(30), BigInt(30), BigInt(30)], "0x");
 		await t1155_2Contract.connect(account1).mintBatch(account1, [BigInt(4), BigInt(5), BigInt(6)], [BigInt(50), BigInt(50), BigInt(50)], "0x");
 
-    const otsAdminAddress = await otsAdminContract.getAddress();
+    const fsAdminAddress = await fsAdminContract.getAddress();
     const t20_1Address = await t20_1Contract.getAddress();
     const t20_2Address = await t20_2Contract.getAddress();
     const t721_1Address = await t721_1Contract.getAddress();
@@ -107,7 +107,7 @@ describe("OverTheSama", function () {
     //Comment & uncomment the following offer examples to test different scenarios.
 
     /************THIS OFFER HANDLES USERS SENDING NOTHING. ESSENTIALLY THE MOST BASIC SCENARIO***********************/
-    // const offer1: OTS_Util.OfferStruct = {
+    // const offer1: FS_Util.OfferStruct = {
     //   id: BigInt(1),
     //   maker: account1,
     //   taker: "0x0000000000000000000000000000000000000000",
@@ -130,7 +130,7 @@ describe("OverTheSama", function () {
 
     /************THIS OFFER HANDLES 1 NATIVE, 2 ERC20, 2 ERC721 (2 IDS EACH), 2 ERC1155 (3 IDS EACH). ESSENTIALLY THE MOST COMPLEX SCENARIO***********************/
 
-    const offer1: OTS_Util.OfferStruct = {
+    const offer1: FS_Util.OfferStruct = {
       id: BigInt(1),
       maker: account1,
       taker: "0x0000000000000000000000000000000000000000",
@@ -151,7 +151,7 @@ describe("OverTheSama", function () {
       status: BigInt(0)
     }
 
-    const offerAddress = await otsAdminContract.predictOfferAddress(offer1);
+    const offerAddress = await fsAdminContract.predictOfferAddress(offer1);
   
     await t20_1Contract.connect(account1).approve(offerAddress, ethers.parseEther("50"));
     await t20_2Contract.connect(account1).approve(offerAddress, ethers.parseEther("50"));
@@ -162,11 +162,11 @@ describe("OverTheSama", function () {
 
     //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
-    const messageHash = ethers.solidityPackedKeccak256(["string", "uint"], ["Authorized by OTS", offer1.id]);
+    const messageHash = ethers.solidityPackedKeccak256(["string", "uint"], ["Authorized by FS", offer1.id]);
     const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
     const signedMessage: string = await account2.signMessage(messageBytes);
 
-    const createOffer = await otsAdminContract.connect(account1).createOffer(offer1, offerAddress, {value : BigInt(Number(offer1.makerTokenAmounts[0][0])+Number(offer1.makerFee))});
+    const createOffer = await fsAdminContract.connect(account1).createOffer(offer1, offerAddress, {value : BigInt(Number(offer1.makerTokenAmounts[0][0])+Number(offer1.makerFee))});
 
     const createOfferGas = await createOffer.wait();
 
@@ -174,13 +174,13 @@ describe("OverTheSama", function () {
 
     //await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
-		return { account1, account2, offer1, otsAdminAddress, offerAddress, otsAdminContract, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract, t20_1Address, t20_2Address, t721_1Address, t721_2Address, t1155_1Address, t1155_2Address };
+		return { account1, account2, offer1, fsAdminAddress, offerAddress, fsAdminContract, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract, t20_1Address, t20_2Address, t721_1Address, t721_2Address, t1155_1Address, t1155_2Address };
 	}
 
 
 	describe("Accept Offer", async function () {
     it("User 2 Accepts Offer", async function () {
-      const { offer1, otsAdminContract, otsAdminAddress, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+      const { offer1, fsAdminContract, fsAdminAddress, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
       await t20_1Contract.connect(account2).approve(offerAddress, ethers.parseEther("30"));
       await t20_2Contract.connect(account2).approve(offerAddress, ethers.parseEther("30"));
@@ -189,10 +189,10 @@ describe("OverTheSama", function () {
       await t1155_1Contract.connect(account2).setApprovalForAll(offerAddress, true);
       await t1155_2Contract.connect(account2).setApprovalForAll(offerAddress, true);
 
-      const offerAbi = require('../artifacts/contracts/OTS_Offer.sol/OTS_Offer.json').abi;
+      const offerAbi = require('../artifacts/contracts/FS_Offer.sol/FS_Offer.json').abi;
       const offerContract = new ethers.Contract(offerAddress, offerAbi, account2);
 
-      const messageHash = ethers.solidityPackedKeccak256(["string", "uint"], ["Authorized by OTS", BigInt(0)]);
+      const messageHash = ethers.solidityPackedKeccak256(["string", "uint"], ["Authorized by FS", BigInt(0)]);
       const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
       const signedMessage: string = await account2.signMessage(messageBytes);
 
@@ -213,7 +213,7 @@ describe("OverTheSama", function () {
     it("User 1 Cancels Offer", async function () {
       const { offer1, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
-      const offerAbi = require('../artifacts/contracts/OTS_Offer.sol/OTS_Offer.json').abi;
+      const offerAbi = require('../artifacts/contracts/FS_Offer.sol/FS_Offer.json').abi;
       const offerContract = new ethers.Contract(offerAddress, offerAbi, account1);
       const cancelOffer = await offerContract.cancelOffer();
 
@@ -228,10 +228,10 @@ describe("OverTheSama", function () {
 
   describe("Batch Cancel Offers", async function () {
     it("Owner Batch Cancels Offers", async function () {
-      const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+      const { offer1, fsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
       for(let i = 2; i < 11; i++) {
-        const offer: OTS_Util.OfferStruct = {
+        const offer: FS_Util.OfferStruct = {
           id: BigInt(i),
           maker: account1,
           taker: "0x0000000000000000000000000000000000000000",
@@ -251,11 +251,11 @@ describe("OverTheSama", function () {
           takerSent: false,
           status: BigInt(0)
         }
-        const offerAddr = await otsAdminContract.predictOfferAddress(offer);
-        await otsAdminContract.connect(account1).createOffer(offer, offerAddr, {value : offer.makerTokenAmounts[0][0]});
+        const offerAddr = await fsAdminContract.predictOfferAddress(offer);
+        await fsAdminContract.connect(account1).createOffer(offer, offerAddr, {value : offer.makerTokenAmounts[0][0]});
       }
 
-      const cancelOffers = await otsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
+      const cancelOffers = await fsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
       const cancelOffersGas = await cancelOffers.wait();
 
       console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
@@ -267,9 +267,9 @@ describe("OverTheSama", function () {
 
   describe("Retrieve Fees", async function () {
     it("Owner retrieves fees", async function () {
-      const { offer1, otsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
+      const { offer1, fsAdminContract, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } = await loadFixture(deployContractsFixture);
 
-      const retrieveFees = await otsAdminContract.connect(account1).collectFees();
+      const retrieveFees = await fsAdminContract.connect(account1).collectFees();
 
       const retrieveFeesGas = await retrieveFees.wait();
 

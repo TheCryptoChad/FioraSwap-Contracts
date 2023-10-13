@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.20;
 
-contract OTS_Util {
+contract FS_Util {
     enum TokenType {
         NATIVE,
         ERC20,

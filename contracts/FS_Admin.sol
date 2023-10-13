@@ -2,10 +2,10 @@
 pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/utils/Create2.sol";
-import "./OTS_Offer.sol";
-import "./OTS_Util.sol";
+import "./FS_Offer.sol";
+import "./FS_Util.sol";
 
-contract OTS_Admin {
+contract FS_Admin {
     mapping (uint256 => address) private offers;
     address private offerTemplate;
     uint256 private offerCount = 1;
@@ -24,7 +24,7 @@ contract OTS_Admin {
         offerTemplate = _offerTemplate;
     }
 
-    function createOffer(OTS_Util.Offer memory _offer, address _predictedAddress) public payable {
+    function createOffer(FS_Util.Offer memory _offer, address _predictedAddress) public payable {
         require(msg.value >= _offer.makerTokenAmounts[0][0] + _offer.makerFee);
         uint256 cachedOfferCount = offerCount;
         _offer.id = cachedOfferCount;
@@ -38,9 +38,9 @@ contract OTS_Admin {
         emit CreateOffer(cachedOfferCount);
     } 
 
-    function deployOfferContract(OTS_Util.Offer memory _offer) internal returns (address) {
+    function deployOfferContract(FS_Util.Offer memory _offer) internal returns (address) {
         bytes32 salt = keccak256(abi.encode(_offer));
-        bytes memory bytecode = abi.encodePacked(type(OTS_Offer).creationCode, abi.encode(_offer, address(this)));
+        bytes memory bytecode = abi.encodePacked(type(FS_Offer).creationCode, abi.encode(_offer, address(this)));
         return Create2.deploy(_offer.makerTokenAmounts[0][0], salt, bytecode);
     }
     
@@ -72,15 +72,15 @@ contract OTS_Admin {
         collectedFees = 0;
     }
 
-    function predictOfferAddress(OTS_Util.Offer memory _offer) external view returns (address) {
+    function predictOfferAddress(FS_Util.Offer memory _offer) external view returns (address) {
         bytes32 salt = keccak256(abi.encode(_offer));
-        bytes32 bytecodeHash = keccak256(abi.encodePacked(type(OTS_Offer).creationCode, abi.encode(_offer, address(this))));
+        bytes32 bytecodeHash = keccak256(abi.encodePacked(type(FS_Offer).creationCode, abi.encode(_offer, address(this))));
         return Create2.computeAddress(salt, bytecodeHash);
     }
 
     function batchCancelOffers(uint256 _startId, uint256 _endId) external {
         do {
-            OTS_Offer(offers[_startId]).cancelOffer();
+            FS_Offer(offers[_startId]).cancelOffer();
             unchecked{++_startId;}
         } while(_startId <= _endId);
     }
