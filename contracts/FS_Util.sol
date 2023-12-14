@@ -36,4 +36,9 @@ contract FS_Util {
         Participant taker;
         Status status;
     }
+
+    struct Call {
+        address target;
+        bytes callData;
+    }
 }

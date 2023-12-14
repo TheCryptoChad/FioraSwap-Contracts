@@ -74,7 +74,7 @@ describe('FioraSwap', function () {
 
 		const fsCoreContractGas = await ethers.provider.estimateGas({ data: fsCoreContract.interface.encodeDeploy() });
 
-		console.log(`Deploy offer template uses: ${fsCoreContractGas} gas`);
+		console.log(`Deploy contracts uses: ${fsCoreContractGas} gas`);
 
 		const t20_1Contract = await t20_1Factory.connect(account1).deploy();
 		const t20_2Contract = await t20_2Factory.connect(account1).deploy();
@@ -148,64 +148,63 @@ describe('FioraSwap', function () {
 
 		await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
-		const multiApprove = await fsCoreContract
-			.connect(account1)
-			.multicall([
-				t20_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, ethers.parseEther('50')]),
-				t20_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, ethers.parseEther('50')]),
-				t721_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(1)]),
-				t721_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(2)]),
-				t721_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(3)]),
-				t721_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(4)]),
-				t1155_1Contract.interface.encodeFunctionData('setApprovalForAll', [fsVaultContractAddress, true]),
-				t1155_2Contract.interface.encodeFunctionData('setApprovalForAll', [fsVaultContractAddress, true]),
-			]);
+		await t20_1Contract.connect(account1).approve(fsVaultContractAddress, ethers.parseEther('50'));
+		await t20_2Contract.connect(account1).approve(fsVaultContractAddress, ethers.parseEther('50'));
+		await t721_1Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
+		await t721_2Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
+		await t1155_1Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
+		await t1155_2Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
 
-		const multiApproveGas = await ethers.provider.estimateGas({
-			data: fsCoreContract.interface.encodeFunctionData('multicall', [
-				[
-					t20_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, ethers.parseEther('50')]),
-					t20_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, ethers.parseEther('50')]),
-					t721_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(1)]),
-					t721_1Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(2)]),
-					t721_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(3)]),
-					t721_2Contract.interface.encodeFunctionData('approve', [fsVaultContractAddress, BigInt(4)]),
-					t1155_1Contract.interface.encodeFunctionData('setApprovalForAll', [fsVaultContractAddress, true]),
-					t1155_2Contract.interface.encodeFunctionData('setApprovalForAll', [fsVaultContractAddress, true]),
-				],
-			]),
-		});
-
-		console.log(`Approve all tokens costs: ${multiApproveGas} gas`);
-
-		const createOffer = await fsCoreContract
-			.connect(account1)
-			.createOffer(
-				offer1,
-				[
-					t20_1Contract.interface.encodeFunctionData('transferFrom', [account1, fsVaultContractAddress, ethers.parseEther('50')]),
-					t20_2Contract.interface.encodeFunctionData('transferFrom', [account1, fsVaultContractAddress, ethers.parseEther('50')]),
-					t721_1Contract.interface.encodeFunctionData('safeTransferFrom', [account1, fsVaultContractAddress, BigInt(1)]),
-					t721_1Contract.interface.encodeFunctionData('safeTransferFrom', [account1, fsVaultContractAddress, BigInt(2)]),
-					t721_2Contract.interface.encodeFunctionData('safeTransferFrom', [account1, fsVaultContractAddress, BigInt(3)]),
-					t721_2Contract.interface.encodeFunctionData('safeTransferFrom', [account1, fsVaultContractAddress, BigInt(4)]),
-					t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
-						account1,
+		const createOffer = await fsCoreContract.connect(account1).createOffer(
+			offer1,
+			[
+				{
+					target: t20_1Address,
+					callData: t20_1Contract.interface.encodeFunctionData('transferFrom', [account1.address, fsVaultContractAddress, ethers.parseEther('50')]),
+				},
+				{
+					target: t20_2Address,
+					callData: t20_2Contract.interface.encodeFunctionData('transferFrom', [account1.address, fsVaultContractAddress, ethers.parseEther('50')]),
+				},
+				{
+					target: t721_1Address,
+					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account1.address, fsVaultContractAddress, BigInt(1)]),
+				},
+				{
+					target: t721_1Address,
+					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account1.address, fsVaultContractAddress, BigInt(2)]),
+				},
+				{
+					target: t721_2Address,
+					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account1.address, fsVaultContractAddress, BigInt(3)]),
+				},
+				{
+					target: t721_2Address,
+					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account1.address, fsVaultContractAddress, BigInt(4)]),
+				},
+				{
+					target: t1155_1Address,
+					callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+						account1.address,
 						fsVaultContractAddress,
 						[BigInt(1), BigInt(2), BigInt(3)],
 						[BigInt(50), BigInt(50), BigInt(50)],
-						'',
+						'0x',
 					]),
-					t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
-						account1,
+				},
+				{
+					target: t1155_1Address,
+					callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+						account1.address,
 						fsVaultContractAddress,
 						[BigInt(4), BigInt(5), BigInt(6)],
 						[BigInt(50), BigInt(50), BigInt(50)],
-						'',
+						'0x',
 					]),
-				],
-				{ value: BigInt(Number(offer1.maker.fee) + Number(offer1.maker.eth)) }
-			);
+				},
+			],
+			{ value: BigInt(Number(offer1.maker.fee) + Number(offer1.maker.eth)) }
+		);
 
 		const createOfferGas = await createOffer.wait();
 
@@ -242,10 +241,8 @@ describe('FioraSwap', function () {
 				account1,
 				account2,
 				offer1,
-				fsCoreContractAddress,
 				fsVaultContractAddress,
 				fsCoreContract,
-				fsVaultContract,
 				t20_1Contract,
 				t20_2Contract,
 				t721_1Contract,
@@ -260,120 +257,270 @@ describe('FioraSwap', function () {
 				t1155_2Address,
 			} = await loadFixture(deployContractsFixture);
 
-			await t20_1Contract.connect(account2).approve(offerAddress, ethers.parseEther('30'));
-			await t20_2Contract.connect(account2).approve(offerAddress, ethers.parseEther('30'));
-			await t721_1Contract.connect(account2).setApprovalForAll(offerAddress, true);
-			await t721_2Contract.connect(account2).setApprovalForAll(offerAddress, true);
-			await t1155_1Contract.connect(account2).setApprovalForAll(offerAddress, true);
-			await t1155_2Contract.connect(account2).setApprovalForAll(offerAddress, true);
-
-			const offerAbi = require('../artifacts/contracts/FS_Offer.sol/FS_Offer.json').abi;
-			const offerContract = new ethers.Contract(offerAddress, offerAbi, account2);
-
-			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint'], ['Authorized by FS', BigInt(0)]);
-			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
-			const signedMessage: string = await account2.signMessage(messageBytes);
+			await t20_1Contract.connect(account2).approve(fsVaultContractAddress, ethers.parseEther('30'));
+			await t20_2Contract.connect(account2).approve(fsVaultContractAddress, ethers.parseEther('30'));
+			await t721_1Contract.connect(account2).setApprovalForAll(fsVaultContractAddress, true);
+			await t721_2Contract.connect(account2).setApprovalForAll(fsVaultContractAddress, true);
+			await t1155_1Contract.connect(account2).setApprovalForAll(fsVaultContractAddress, true);
+			await t1155_2Contract.connect(account2).setApprovalForAll(fsVaultContractAddress, true);
 
 			const takerFee: bigint = ethers.parseEther('3');
 
-			const acceptOffer = await offerContract.acceptOffer(takerFee, { value: BigInt(Number(offer1.takerTokenAmounts[0][0]) + Number(takerFee)) });
+			const acceptOffer = await fsCoreContract.acceptOffer(
+				BigInt(1),
+				takerFee,
+				[
+					{
+						target: t20_1Address,
+						callData: t20_1Contract.interface.encodeFunctionData('transferFrom', [account2.address, account1.address, ethers.parseEther('30')]),
+					},
+					{
+						target: t20_2Address,
+						callData: t20_2Contract.interface.encodeFunctionData('transferFrom', [account2.address, account1.address, ethers.parseEther('30')]),
+					},
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account2.address, account1.address, BigInt(3)]),
+					},
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account2.address, account1.address, BigInt(4)]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account2.address, account1.address, BigInt(1)]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [account2.address, account1.address, BigInt(2)]),
+					},
+					{
+						target: t1155_1Address,
+						callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							account2.address,
+							account1.address,
+							[BigInt(4), BigInt(5), BigInt(6)],
+							[BigInt(30), BigInt(30), BigInt(30)],
+							'0x',
+						]),
+					},
+					{
+						target: t1155_2Address,
+						callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							account2.address,
+							account1.address,
+							[BigInt(1), BigInt(2), BigInt(3)],
+							[BigInt(30), BigInt(30), BigInt(30)],
+							'0x',
+						]),
+					},
+					{ target: t20_1Address, callData: t20_1Contract.interface.encodeFunctionData('transfer', [account2.address, ethers.parseEther('50')]) },
+					{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account2.address, ethers.parseEther('50')]) },
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account2.address,
+							BigInt(1),
+						]),
+					},
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account2.address,
+							BigInt(2),
+						]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account2.address,
+							BigInt(3),
+						]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account2.address,
+							BigInt(4),
+						]),
+					},
+					{
+						target: t1155_1Address,
+						callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							fsVaultContractAddress,
+							account2.address,
+							[BigInt(1), BigInt(2), BigInt(3)],
+							[BigInt(50), BigInt(50), BigInt(50)],
+							'0x',
+						]),
+					},
+					{
+						target: t1155_2Address,
+						callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							fsVaultContractAddress,
+							account2.address,
+							[BigInt(4), BigInt(5), BigInt(6)],
+							[BigInt(50), BigInt(50), BigInt(50)],
+							'0x',
+						]),
+					},
+				],
+				{ value: BigInt(Number(offer1.taker.eth) + Number(takerFee)) }
+			);
 
 			const acceptOfferGas = await acceptOffer.wait();
 
 			console.log(`Accept offer uses: ${acceptOfferGas?.gasUsed} gas`);
 
-			//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
 
 	describe('Cancel Offer', async function () {
 		it('User 1 Cancels Offer', async function () {
-			const { offer1, offerAddress, account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract } =
-				await loadFixture(deployContractsFixture);
+			const {
+				fsCoreContract,
+				fsVaultContractAddress,
+				account1,
+				account2,
+				t20_1Contract,
+				t20_2Contract,
+				t721_1Contract,
+				t721_2Contract,
+				t1155_1Contract,
+				t1155_2Contract,
+				t20_1Address,
+				t20_2Address,
+				t721_1Address,
+				t721_2Address,
+				t1155_1Address,
+				t1155_2Address,
+			} = await loadFixture(deployContractsFixture);
 
-			const offerAbi = require('../artifacts/contracts/FS_Offer.sol/FS_Offer.json').abi;
-			const offerContract = new ethers.Contract(offerAddress, offerAbi, account1);
-			const cancelOffer = await offerContract.cancelOffer();
+			const cancelOffer = await fsCoreContract.cancelOffer(BigInt(1), [
+				{ target: t20_1Address, callData: t20_1Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
+				{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
+				{
+					target: t721_1Address,
+					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(1)]),
+				},
+				{
+					target: t721_1Address,
+					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(2)]),
+				},
+				{
+					target: t721_2Address,
+					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(3)]),
+				},
+				{
+					target: t721_2Address,
+					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(4)]),
+				},
+				{
+					target: t1155_1Address,
+					callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+						fsVaultContractAddress,
+						account1.address,
+						[BigInt(1), BigInt(2), BigInt(3)],
+						[BigInt(50), BigInt(50), BigInt(50)],
+						'0x',
+					]),
+				},
+				{
+					target: t1155_2Address,
+					callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+						fsVaultContractAddress,
+						account1.address,
+						[BigInt(4), BigInt(5), BigInt(6)],
+						[BigInt(50), BigInt(50), BigInt(50)],
+						'0x',
+					]),
+				},
+			]);
 
 			const cancelOfferGas = await cancelOffer.wait();
 
 			console.log(`Cancel offer uses: ${cancelOfferGas?.gasUsed} gas`);
 
-			//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
 
-	describe('Batch Cancel Offers', async function () {
-		it('Owner Batch Cancels Offers', async function () {
-			const {
-				offer1,
-				fsAdminContract,
-				offerAddress,
-				account1,
-				account2,
-				t20_1Contract,
-				t20_2Contract,
-				t721_1Contract,
-				t721_2Contract,
-				t1155_1Contract,
-				t1155_2Contract,
-			} = await loadFixture(deployContractsFixture);
+	// describe('Batch Cancel Offers', async function () {
+	// 	it('Owner Batch Cancels Offers', async function () {
+	// 		const {
+	// 			offer1,
+	// 			fsAdminContract,
+	// 			offerAddress,
+	// 			account1,
+	// 			account2,
+	// 			t20_1Contract,
+	// 			t20_2Contract,
+	// 			t721_1Contract,
+	// 			t721_2Contract,
+	// 			t1155_1Contract,
+	// 			t1155_2Contract,
+	// 		} = await loadFixture(deployContractsFixture);
 
-			for (let i = 2; i < 11; i++) {
-				const offer: FS_Util.OfferStruct = {
-					id: BigInt(i),
-					maker: account1,
-					taker: '0x0000000000000000000000000000000000000000',
-					makerFee: ethers.parseEther('0'),
-					takerFee: ethers.parseEther('0'),
-					makerTokenTypes: [BigInt(0)],
-					takerTokenTypes: [BigInt(0)],
-					makerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
-					takerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
-					makerTokenIds: [[BigInt(0)]],
-					takerTokenIds: [[BigInt(0)]],
-					makerTokenAmounts: [[ethers.parseEther('1')]],
-					takerTokenAmounts: [[ethers.parseEther('1')]],
-					makerTokenChainIds: [BigInt(0)],
-					takerTokenChainIds: [BigInt(0)],
-					makerSent: true,
-					takerSent: false,
-					status: BigInt(0),
-				};
-				const offerAddr = await fsAdminContract.predictOfferAddress(offer);
-				await fsAdminContract.connect(account1).createOffer(offer, offerAddr, { value: offer.makerTokenAmounts[0][0] });
-			}
+	// 		for (let i = 2; i < 11; i++) {
+	// 			const offer: FS_Util.OfferStruct = {
+	// 				id: BigInt(i),
+	// 				maker: account1,
+	// 				taker: '0x0000000000000000000000000000000000000000',
+	// 				makerFee: ethers.parseEther('0'),
+	// 				takerFee: ethers.parseEther('0'),
+	// 				makerTokenTypes: [BigInt(0)],
+	// 				takerTokenTypes: [BigInt(0)],
+	// 				makerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
+	// 				takerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
+	// 				makerTokenIds: [[BigInt(0)]],
+	// 				takerTokenIds: [[BigInt(0)]],
+	// 				makerTokenAmounts: [[ethers.parseEther('1')]],
+	// 				takerTokenAmounts: [[ethers.parseEther('1')]],
+	// 				makerTokenChainIds: [BigInt(0)],
+	// 				takerTokenChainIds: [BigInt(0)],
+	// 				makerSent: true,
+	// 				takerSent: false,
+	// 				status: BigInt(0),
+	// 			};
+	// 			const offerAddr = await fsAdminContract.predictOfferAddress(offer);
+	// 			await fsAdminContract.connect(account1).createOffer(offer, offerAddr, { value: offer.makerTokenAmounts[0][0] });
+	// 		}
 
-			const cancelOffers = await fsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
-			const cancelOffersGas = await cancelOffers.wait();
+	// 		const cancelOffers = await fsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
+	// 		const cancelOffersGas = await cancelOffers.wait();
 
-			console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
+	// 		console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
 
-			//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
-		});
-	});
+	// 		//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+	// 	});
+	// });
 
-	describe('Retrieve Fees', async function () {
-		it('Owner retrieves fees', async function () {
-			const {
-				offer1,
-				fsAdminContract,
-				offerAddress,
-				account1,
-				account2,
-				t20_1Contract,
-				t20_2Contract,
-				t721_1Contract,
-				t721_2Contract,
-				t1155_1Contract,
-				t1155_2Contract,
-			} = await loadFixture(deployContractsFixture);
+	// describe('Retrieve Fees', async function () {
+	// 	it('Owner retrieves fees', async function () {
+	// 		const {
+	// 			offer1,
+	// 			fsAdminContract,
+	// 			offerAddress,
+	// 			account1,
+	// 			account2,
+	// 			t20_1Contract,
+	// 			t20_2Contract,
+	// 			t721_1Contract,
+	// 			t721_2Contract,
+	// 			t1155_1Contract,
+	// 			t1155_2Contract,
+	// 		} = await loadFixture(deployContractsFixture);
 
-			const retrieveFees = await fsAdminContract.connect(account1).collectFees();
+	// 		const retrieveFees = await fsAdminContract.connect(account1).collectFees();
 
-			const retrieveFeesGas = await retrieveFees.wait();
+	// 		const retrieveFeesGas = await retrieveFees.wait();
 
-			console.log(`Retrieve fees uses: ${retrieveFeesGas?.gasUsed} gas`);
-		});
-	});
+	// 		console.log(`Retrieve fees uses: ${retrieveFeesGas?.gasUsed} gas`);
+	// 	});
+	// });
 });
