@@ -1,44 +1,39 @@
-//SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
 contract FS_Util {
-    enum TokenType {
-        NATIVE,
+    enum Standard {
         ERC20,
         ERC721,
         ERC1155
     }
 
-    enum OfferStatus {
+    enum Status {
         ACTIVE,
         COMPLETED,
         CANCELLED
     }
 
-    enum OfferParticipant {
-        MAKER,
-        TAKER
+    struct Token {
+        Standard standard;
+        address contractAddress;
+        uint256[] ids;
+        uint256[] amounts;
+        uint256 chainId;
+    }
+
+    struct Participant {
+        address walletAddress;
+        uint256 fee;
+        uint256 eth;
+        //Token[] tokens;
+        bool sent;
     }
 
     struct Offer {
         uint256 id;
-        address maker;
-        address taker;
-        uint256 makerFee;
-        uint256 takerFee;
-        TokenType[] makerTokenTypes;
-        TokenType[] takerTokenTypes;
-        address[] makerTokenAddresses;
-        address[] takerTokenAddresses;
-        uint256[][] makerTokenIds;
-        uint256[][] takerTokenIds;
-        uint256[][] makerTokenAmounts;
-        uint256[][] takerTokenAmounts;
-        uint256[] makerTokenChainIds;
-        uint256[] takerTokenChainIds;
-        bool makerSent;
-        bool takerSent;
-        OfferStatus status;
+        Participant maker;
+        Participant taker;
+        Status status;
     }
 }

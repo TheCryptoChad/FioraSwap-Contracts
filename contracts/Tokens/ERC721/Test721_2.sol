@@ -1,19 +1,15 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract Test721_2 is ERC721 {
-    using Counters for Counters.Counter;
-
-    Counters.Counter private _tokenIdCounter;
+    uint256 private _nextTokenId;
 
     constructor() ERC721("Test721_2", "T721_2") {}
 
     function safeMint(address to) public {
-        uint256 tokenId = _tokenIdCounter.current() + 1;
-        _tokenIdCounter.increment();
+        uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
     }
 }
