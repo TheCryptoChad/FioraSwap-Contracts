@@ -17,16 +17,22 @@ contract FS_Vault is Ownable, ERC721Holder, ERC1155Holder {
     receive() external payable {}
 
     function executeCalls(address[] calldata ethAddresses, uint256[] calldata ethValues, FS_Util.Call[] calldata callDatas) external payable onlyOwner {
+      uint256 i;
+      
       if (ethAddresses.length > 0) {
-        for (uint256 i = 0; i < ethAddresses.length; i++) {
+        do {
           (bool success,) = ethAddresses[i].call{value: ethValues[i]}("");
 
           if (!success) revert();
-        }
+
+          unchecked{++i;}
+        } while (i < ethAddresses.length);
       }
       
+      i = 0;
+
       if (callDatas.length > 0) {
-        for (uint256 i = 0; i < callDatas.length; i++) {
+        do {
           (bool success, bytes memory returnData) = callDatas[i].target.call(callDatas[i].callData);
 
           if (!success) {
@@ -34,7 +40,9 @@ contract FS_Vault is Ownable, ERC721Holder, ERC1155Holder {
               revert(add(returnData, 32), mload(returnData))
             }
           }
-        }
+
+          unchecked{++i;}
+        } while (i < callDatas.length);
       }
     }
 }
