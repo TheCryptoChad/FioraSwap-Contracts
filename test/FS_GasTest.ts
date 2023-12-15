@@ -16,6 +16,7 @@ const fullStatusLog = async (
 ) => {
 	console.log(`
   Account 1 owns:
+  Address: ${account1.address}
   ETH: ${ethers.formatEther(await account1.provider.getBalance(account1))}
   T20_1: ${ethers.formatEther(await t20_1Contract.balanceOf(account1))}
   T20_2: ${ethers.formatEther(await t20_2Contract.balanceOf(account1))}
@@ -35,6 +36,7 @@ const fullStatusLog = async (
 	)}
 
   Account 2 owns:
+  Address: ${account2.address}
   ETH: ${ethers.formatEther(await account2.provider.getBalance(account2))}
   T20_1: ${ethers.formatEther(await t20_1Contract.balanceOf(account2))}
   T20_2: ${ethers.formatEther(await t20_2Contract.balanceOf(account2))}
@@ -193,7 +195,7 @@ describe('FioraSwap', function () {
 					]),
 				},
 				{
-					target: t1155_1Address,
+					target: t1155_2Address,
 					callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
 						account1.address,
 						fsVaultContractAddress,
@@ -266,7 +268,7 @@ describe('FioraSwap', function () {
 
 			const takerFee: bigint = ethers.parseEther('3');
 
-			const acceptOffer = await fsCoreContract.acceptOffer(
+			const acceptOffer = await fsCoreContract.connect(account2).acceptOffer(
 				BigInt(1),
 				takerFee,
 				[
@@ -376,6 +378,8 @@ describe('FioraSwap', function () {
 
 			console.log(`Accept offer uses: ${acceptOfferGas?.gasUsed} gas`);
 
+			console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
+
 			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
@@ -401,7 +405,7 @@ describe('FioraSwap', function () {
 				t1155_2Address,
 			} = await loadFixture(deployContractsFixture);
 
-			const cancelOffer = await fsCoreContract.cancelOffer(BigInt(1), [
+			const cancelOffer = await fsCoreContract.connect(account1).cancelOffer(BigInt(1), [
 				{ target: t20_1Address, callData: t20_1Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
 				{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
 				{
@@ -446,81 +450,9 @@ describe('FioraSwap', function () {
 
 			console.log(`Cancel offer uses: ${cancelOfferGas?.gasUsed} gas`);
 
+			console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
+
 			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
-
-	// describe('Batch Cancel Offers', async function () {
-	// 	it('Owner Batch Cancels Offers', async function () {
-	// 		const {
-	// 			offer1,
-	// 			fsAdminContract,
-	// 			offerAddress,
-	// 			account1,
-	// 			account2,
-	// 			t20_1Contract,
-	// 			t20_2Contract,
-	// 			t721_1Contract,
-	// 			t721_2Contract,
-	// 			t1155_1Contract,
-	// 			t1155_2Contract,
-	// 		} = await loadFixture(deployContractsFixture);
-
-	// 		for (let i = 2; i < 11; i++) {
-	// 			const offer: FS_Util.OfferStruct = {
-	// 				id: BigInt(i),
-	// 				maker: account1,
-	// 				taker: '0x0000000000000000000000000000000000000000',
-	// 				makerFee: ethers.parseEther('0'),
-	// 				takerFee: ethers.parseEther('0'),
-	// 				makerTokenTypes: [BigInt(0)],
-	// 				takerTokenTypes: [BigInt(0)],
-	// 				makerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
-	// 				takerTokenAddresses: ['0x0000000000000000000000000000000000000000'],
-	// 				makerTokenIds: [[BigInt(0)]],
-	// 				takerTokenIds: [[BigInt(0)]],
-	// 				makerTokenAmounts: [[ethers.parseEther('1')]],
-	// 				takerTokenAmounts: [[ethers.parseEther('1')]],
-	// 				makerTokenChainIds: [BigInt(0)],
-	// 				takerTokenChainIds: [BigInt(0)],
-	// 				makerSent: true,
-	// 				takerSent: false,
-	// 				status: BigInt(0),
-	// 			};
-	// 			const offerAddr = await fsAdminContract.predictOfferAddress(offer);
-	// 			await fsAdminContract.connect(account1).createOffer(offer, offerAddr, { value: offer.makerTokenAmounts[0][0] });
-	// 		}
-
-	// 		const cancelOffers = await fsAdminContract.connect(account1).batchCancelOffers(BigInt(1), BigInt(10));
-	// 		const cancelOffersGas = await cancelOffers.wait();
-
-	// 		console.log(`Batch cancel offers uses: ${cancelOffersGas?.gasUsed} gas`);
-
-	// 		//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
-	// 	});
-	// });
-
-	// describe('Retrieve Fees', async function () {
-	// 	it('Owner retrieves fees', async function () {
-	// 		const {
-	// 			offer1,
-	// 			fsAdminContract,
-	// 			offerAddress,
-	// 			account1,
-	// 			account2,
-	// 			t20_1Contract,
-	// 			t20_2Contract,
-	// 			t721_1Contract,
-	// 			t721_2Contract,
-	// 			t1155_1Contract,
-	// 			t1155_2Contract,
-	// 		} = await loadFixture(deployContractsFixture);
-
-	// 		const retrieveFees = await fsAdminContract.connect(account1).collectFees();
-
-	// 		const retrieveFeesGas = await retrieveFees.wait();
-
-	// 		console.log(`Retrieve fees uses: ${retrieveFeesGas?.gasUsed} gas`);
-	// 	});
-	// });
 });

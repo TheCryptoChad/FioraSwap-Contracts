@@ -43,11 +43,11 @@ contract FS_Core {
     require(msg.value == offer.taker.eth + takerFee);
     require(offer.status == FS_Util.Status.ACTIVE);
 
-    address[] memory ethAddresses;
+    address[] memory ethAddresses = new address[](2);
     ethAddresses[0] = offer.maker.walletAddress;
     ethAddresses[1] = msg.sender;
 
-    uint256[] memory ethValues;
+    uint256[] memory ethValues = new uint256[](2);
     ethValues[0] = offer.taker.eth;
     ethValues[1] = offer.maker.eth;
 
@@ -69,10 +69,10 @@ contract FS_Core {
     require(msg.sender == offer.maker.walletAddress);
     require(offer.status == FS_Util.Status.ACTIVE);
 
-    address[] memory ethAddresses;
+    address[] memory ethAddresses = new address[](1);
     ethAddresses[0] = offer.maker.walletAddress;
 
-    uint256[] memory ethValues;
+    uint256[] memory ethValues = new uint256[](1);
     ethValues[0] = offer.maker.eth;
 
     fsVault.executeCalls(ethAddresses, ethValues, tokenCalldatas);

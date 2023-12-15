@@ -7,20 +7,17 @@ Batch cancel offers uses: 2,641,433 gas
 Retrieve fees uses: 30,611 gas
 Set fees uses: 29,058 gas
 
-/****************V2******************/
-Deploy contract uses: 53,001 gas
-Create offer uses: 3,034,120 gas
-Accept offer uses: 1,273,264 gas
-Cancel offer uses: 428,625 gas
-Batch cancel offers uses: 2,641,433 gas
-Retrieve fees uses: 30,611 gas
-Set fees uses: 29,058 gas
-
-/****************V3*******************/
-Deploy contracts uses: 53001 gas
-
+/****************V2*******************/
+Deploy offer template uses: 57,153 gas
+Deploy admin contract uses: 53,371 gas
 Create offer uses: 4,719,224 gas
 Accept offer uses: 984,261 gas
 Cancel offer uses: 684,442 gas
 Batch cancel offers uses: 1,480,983 gas
 Retrieve fees uses: 23,690 gas
+
+/****************V3*******************/
+Deploy contracts uses: 53,001 gas
+Create offer uses: 559,597 gas
+Accept offer uses: 767,462 gas
+Cancel offer uses: 424,926 gas
