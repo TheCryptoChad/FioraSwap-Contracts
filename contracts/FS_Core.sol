@@ -20,12 +20,12 @@ contract FS_Core {
   }
 
   function createOffer(FS_Util.Offer memory offer, FS_Util.Call[] calldata tokenCalldatas) external payable {
-    require(msg.value == offer.maker.eth + offer.maker.fee);
+    require(msg.value == offer.maker.native + offer.maker.fee);
 
-    address[] memory ethAddresses;
-    uint256[] memory ethValues;
+    address[] memory nativeAddresses;
+    uint256[] memory nativeValues;
 
-    fsVault.executeCalls{value: offer.maker.eth}(ethAddresses, ethValues, tokenCalldatas);
+    fsVault.executeCalls{value: offer.maker.native}(nativeAddresses, nativeValues, tokenCalldatas);
 
     offer.id = offerCount;
     offer.maker.sent = true;
@@ -40,18 +40,18 @@ contract FS_Core {
     FS_Util.Offer memory offer = offers[id];
 
     require(msg.sender != offer.maker.walletAddress);
-    require(msg.value == offer.taker.eth + takerFee);
+    require(msg.value == offer.taker.native + takerFee);
     require(offer.status == FS_Util.Status.ACTIVE);
 
-    address[] memory ethAddresses = new address[](2);
-    ethAddresses[0] = offer.maker.walletAddress;
-    ethAddresses[1] = msg.sender;
+    address[] memory nativeAddresses = new address[](2);
+    nativeAddresses[0] = offer.maker.walletAddress;
+    nativeAddresses[1] = msg.sender;
 
-    uint256[] memory ethValues = new uint256[](2);
-    ethValues[0] = offer.taker.eth;
-    ethValues[1] = offer.maker.eth;
+    uint256[] memory nativeValues = new uint256[](2);
+    nativeValues[0] = offer.taker.native;
+    nativeValues[1] = offer.maker.native;
 
-    fsVault.executeCalls{value: offer.taker.eth}(ethAddresses, ethValues, tokenCalldatas);
+    fsVault.executeCalls{value: offer.taker.native}(nativeAddresses, nativeValues, tokenCalldatas);
 
     offer.taker.walletAddress = msg.sender;
     offer.taker.fee = takerFee;
@@ -69,13 +69,13 @@ contract FS_Core {
     require(msg.sender == offer.maker.walletAddress);
     require(offer.status == FS_Util.Status.ACTIVE);
 
-    address[] memory ethAddresses = new address[](1);
-    ethAddresses[0] = offer.maker.walletAddress;
+    address[] memory nativeAddresses = new address[](1);
+    nativeAddresses[0] = offer.maker.walletAddress;
 
-    uint256[] memory ethValues = new uint256[](1);
-    ethValues[0] = offer.maker.eth;
+    uint256[] memory nativeValues = new uint256[](1);
+    nativeValues[0] = offer.maker.native;
 
-    fsVault.executeCalls(ethAddresses, ethValues, tokenCalldatas);
+    fsVault.executeCalls(nativeAddresses, nativeValues, tokenCalldatas);
 
     offer.status = FS_Util.Status.CANCELLED;
     

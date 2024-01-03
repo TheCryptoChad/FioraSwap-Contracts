@@ -116,32 +116,32 @@ describe('FioraSwap', function () {
 			maker: {
 				walletAddress: account1,
 				fee: ethers.parseEther('10'),
-				eth: ethers.parseEther('50'),
+				native: ethers.parseEther('50'),
 				// tokens: [
-				//   {standard: BigInt(0), contractAddress: t20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(0), contractAddress: t20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(1)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(2)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(3)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(4)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(2), contractAddress: t1155_1Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(50), BigInt(50), BigInt(50)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(2), contractAddress: t1155_2Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(50), BigInt(50), BigInt(50)], chainId: [BigInt(2109)]},
+				//   {standard: BigInt(0), contractAddress: t20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], network: [BigInt(2109)]},
+				//   {standard: BigInt(0), contractAddress: t20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(1)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(2)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(3)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(4)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(2), contractAddress: t1155_1Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(50), BigInt(50), BigInt(50)], network: [BigInt(2109)]},
+				//   {standard: BigInt(2), contractAddress: t1155_2Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(50), BigInt(50), BigInt(50)], network: [BigInt(2109)]},
 				// ],
 				sent: false,
 			},
 			taker: {
 				walletAddress: '0x0000000000000000000000000000000000000000',
 				fee: ethers.parseEther('0'),
-				eth: ethers.parseEther('30'),
+				native: ethers.parseEther('30'),
 				// tokens: [
-				//   {standard: BigInt(0), contractAddress: t20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(0), contractAddress: t20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(3)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(4)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(1)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(2)], amounts: [BigInt(0)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(2), contractAddress: t1155_1Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(30), BigInt(30), BigInt(30)], chainId: [BigInt(2109)]},
-				//   {standard: BigInt(2), contractAddress: t1155_2Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(30), BigInt(30), BigInt(30)], chainId: [BigInt(2109)]},
+				//   {standard: BigInt(0), contractAddress: t20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], network: [BigInt(2109)]},
+				//   {standard: BigInt(0), contractAddress: t20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(3)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_1Address, ids: [BigInt(4)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(1)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(1), contractAddress: t721_2Address, ids: [BigInt(2)], amounts: [BigInt(0)], network: [BigInt(2109)]},
+				//   {standard: BigInt(2), contractAddress: t1155_1Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(30), BigInt(30), BigInt(30)], network: [BigInt(2109)]},
+				//   {standard: BigInt(2), contractAddress: t1155_2Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(30), BigInt(30), BigInt(30)], network: [BigInt(2109)]},
 				// ],
 				sent: false,
 			},
@@ -205,7 +205,7 @@ describe('FioraSwap', function () {
 					]),
 				},
 			],
-			{ value: BigInt(Number(offer1.maker.fee) + Number(offer1.maker.eth)) }
+			{ value: BigInt(Number(offer1.maker.fee) + Number(offer1.maker.native)) }
 		);
 
 		const createOfferGas = await createOffer.wait();
@@ -371,7 +371,7 @@ describe('FioraSwap', function () {
 						]),
 					},
 				],
-				{ value: BigInt(Number(offer1.taker.eth) + Number(takerFee)) }
+				{ value: BigInt(Number(offer1.taker.native) + Number(takerFee)) }
 			);
 
 			const acceptOfferGas = await acceptOffer.wait();

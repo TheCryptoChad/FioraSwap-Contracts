@@ -19,13 +19,13 @@ contract FS_Util {
         address contractAddress;
         uint256[] ids;
         uint256[] amounts;
-        uint256 chainId;
+        uint256 network;
     }
 
     struct Participant {
         address walletAddress;
         uint256 fee;
-        uint256 eth;
+        uint256 native;
         //Token[] tokens;
         bool sent;
     }

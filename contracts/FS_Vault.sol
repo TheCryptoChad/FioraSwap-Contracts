@@ -16,17 +16,17 @@ contract FS_Vault is Ownable, ERC721Holder, ERC1155Holder {
 
     receive() external payable {}
 
-    function executeCalls(address[] calldata ethAddresses, uint256[] calldata ethValues, FS_Util.Call[] calldata callDatas) external payable onlyOwner {
+    function executeCalls(address[] calldata nativeAddresses, uint256[] calldata nativeValues, FS_Util.Call[] calldata callDatas) external payable onlyOwner {
       uint256 i;
       
-      if (ethAddresses.length > 0) {
+      if (nativeAddresses.length > 0) {
         do {
-          (bool success,) = ethAddresses[i].call{value: ethValues[i]}("");
+          (bool success,) = nativeAddresses[i].call{value: nativeValues[i]}("");
 
           if (!success) revert();
 
           unchecked{++i;}
-        } while (i < ethAddresses.length);
+        } while (i < nativeAddresses.length);
       }
       
       i = 0;
