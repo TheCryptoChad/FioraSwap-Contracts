@@ -69,12 +69,12 @@ describe('FioraSwap', function () {
 		const t1155_1Factory = await ethers.getContractFactory('Test1155_1');
 		const t1155_2Factory = await ethers.getContractFactory('Test1155_2');
 
-		const fsCoreContract = await fsCoreFactory.connect(account1).deploy();
+		const fsCoreContract = await fsCoreFactory.connect(account1).deploy(account1.address, account1.address);
 		const fsCoreContractAddress = await fsCoreContract.getAddress();
 		const fsVaultContractAddress = await fsCoreContract.getFsVaultAddress();
 		const fsVaultContract = new ethers.Contract(fsVaultContractAddress, FSVault.abi, account1);
 
-		const fsCoreContractGas = await ethers.provider.estimateGas({ data: fsCoreContract.interface.encodeDeploy() });
+		const fsCoreContractGas = await ethers.provider.estimateGas({ data: fsCoreContract.interface.encodeDeploy([account1.address, account1.address]) });
 
 		console.log(`Deploy contracts uses: ${fsCoreContractGas} gas`);
 
@@ -157,6 +157,12 @@ describe('FioraSwap', function () {
 		await t1155_1Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
 		await t1155_2Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
 
+		const message: string = `Create FS Offer:`;
+		const nonce: number = Date.now();
+		const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 0, nonce]);
+		const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
+		const signedMessage: string = await account1.signMessage(messageBytes);
+
 		const createOffer = await fsCoreContract.connect(account1).createOffer(
 			offer1,
 			[
@@ -205,6 +211,9 @@ describe('FioraSwap', function () {
 					]),
 				},
 			],
+			message,
+			nonce,
+			signedMessage,
 			{ value: BigInt(Number(offer1.maker.fee) + Number(offer1.maker.native)) }
 		);
 
@@ -267,6 +276,12 @@ describe('FioraSwap', function () {
 			await t1155_2Contract.connect(account2).setApprovalForAll(fsVaultContractAddress, true);
 
 			const takerFee: bigint = ethers.parseEther('3');
+
+			const message: string = `Accept FS Offer:`;
+			const nonce: number = Date.now();
+			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
+			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
+			const signedMessage: string = await account1.signMessage(messageBytes);
 
 			const acceptOffer = await fsCoreContract.connect(account2).acceptOffer(
 				BigInt(1),
@@ -371,6 +386,9 @@ describe('FioraSwap', function () {
 						]),
 					},
 				],
+				message,
+				nonce,
+				signedMessage,
 				{ value: BigInt(Number(offer1.taker.native) + Number(takerFee)) }
 			);
 
@@ -405,46 +423,74 @@ describe('FioraSwap', function () {
 				t1155_2Address,
 			} = await loadFixture(deployContractsFixture);
 
-			const cancelOffer = await fsCoreContract.connect(account1).cancelOffer(BigInt(1), [
-				{ target: t20_1Address, callData: t20_1Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
-				{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
-				{
-					target: t721_1Address,
-					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(1)]),
-				},
-				{
-					target: t721_1Address,
-					callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(2)]),
-				},
-				{
-					target: t721_2Address,
-					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(3)]),
-				},
-				{
-					target: t721_2Address,
-					callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(4)]),
-				},
-				{
-					target: t1155_1Address,
-					callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
-						fsVaultContractAddress,
-						account1.address,
-						[BigInt(1), BigInt(2), BigInt(3)],
-						[BigInt(50), BigInt(50), BigInt(50)],
-						'0x',
-					]),
-				},
-				{
-					target: t1155_2Address,
-					callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
-						fsVaultContractAddress,
-						account1.address,
-						[BigInt(4), BigInt(5), BigInt(6)],
-						[BigInt(50), BigInt(50), BigInt(50)],
-						'0x',
-					]),
-				},
-			]);
+			const message: string = `Cancel FS Offer:`;
+			const nonce: number = Date.now();
+			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
+			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
+			const signedMessage: string = await account1.signMessage(messageBytes);
+
+			const cancelOffer = await fsCoreContract.connect(account1).cancelOffer(
+				BigInt(1),
+				[
+					{ target: t20_1Address, callData: t20_1Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
+					{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account1.address,
+							BigInt(1),
+						]),
+					},
+					{
+						target: t721_1Address,
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account1.address,
+							BigInt(2),
+						]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account1.address,
+							BigInt(3),
+						]),
+					},
+					{
+						target: t721_2Address,
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
+							fsVaultContractAddress,
+							account1.address,
+							BigInt(4),
+						]),
+					},
+					{
+						target: t1155_1Address,
+						callData: t1155_1Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							fsVaultContractAddress,
+							account1.address,
+							[BigInt(1), BigInt(2), BigInt(3)],
+							[BigInt(50), BigInt(50), BigInt(50)],
+							'0x',
+						]),
+					},
+					{
+						target: t1155_2Address,
+						callData: t1155_2Contract.interface.encodeFunctionData('safeBatchTransferFrom', [
+							fsVaultContractAddress,
+							account1.address,
+							[BigInt(4), BigInt(5), BigInt(6)],
+							[BigInt(50), BigInt(50), BigInt(50)],
+							'0x',
+						]),
+					},
+				],
+				message,
+				nonce,
+				signedMessage
+			);
 
 			const cancelOfferGas = await cancelOffer.wait();
 
