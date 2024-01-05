@@ -158,7 +158,7 @@ describe('FioraSwap', function () {
 		await t1155_2Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
 
 		const message: string = `Create FS Offer:`;
-		const nonce: number = Date.now();
+		const nonce: number = Math.floor(Date.now() / 10);
 		const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 0, nonce]);
 		const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 		const signedMessage: string = await account1.signMessage(messageBytes);
@@ -278,7 +278,7 @@ describe('FioraSwap', function () {
 			const takerFee: bigint = ethers.parseEther('3');
 
 			const message: string = `Accept FS Offer:`;
-			const nonce: number = Date.now();
+			const nonce: number = Math.floor(Date.now() / 10);
 			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
 			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 			const signedMessage: string = await account1.signMessage(messageBytes);
@@ -424,7 +424,7 @@ describe('FioraSwap', function () {
 			} = await loadFixture(deployContractsFixture);
 
 			const message: string = `Cancel FS Offer:`;
-			const nonce: number = Date.now();
+			const nonce: number = Math.floor(Date.now() / 10);
 			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
 			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 			const signedMessage: string = await account1.signMessage(messageBytes);

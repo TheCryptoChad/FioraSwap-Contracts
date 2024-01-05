@@ -44,16 +44,16 @@ contract FS_Core is Ownable {
     verifySignature(message, 0, nonce, signedMessage);
     nonces[nonce] = true;
 
-    address[] memory nativeAddresses;
-    uint256[] memory nativeValues;
-
-    fsVault.executeCalls{value: offer.maker.native}(nativeAddresses, nativeValues, tokenCalldatas);
-
     offer.id = offerCount;
     offer.maker.sent = true;
 
     offerCount++;
     offers[offer.id] = offer;
+
+    address[] memory nativeAddresses;
+    uint256[] memory nativeValues;
+
+    fsVault.executeCalls{value: offer.maker.native}(nativeAddresses, nativeValues, tokenCalldatas);
 
     emit CreateOffer(offer.id);
   }
@@ -68,6 +68,13 @@ contract FS_Core is Ownable {
     verifySignature(message, offer.id, nonce, signedMessage);
     nonces[nonce] = true;
 
+    offer.taker.walletAddress = msg.sender;
+    offer.taker.fee = takerFee;
+    offer.taker.sent = true;
+    offer.status = FS_Util.Status.COMPLETED;
+
+    delete offers[id];
+
     address[] memory nativeAddresses = new address[](2);
     nativeAddresses[0] = offer.maker.walletAddress;
     nativeAddresses[1] = msg.sender;
@@ -77,13 +84,6 @@ contract FS_Core is Ownable {
     nativeValues[1] = offer.maker.native;
 
     fsVault.executeCalls{value: offer.taker.native}(nativeAddresses, nativeValues, tokenCalldatas);
-
-    offer.taker.walletAddress = msg.sender;
-    offer.taker.fee = takerFee;
-    offer.taker.sent = true;
-    offer.status = FS_Util.Status.COMPLETED;
-
-    offers[id] = offer;
 
     emit AcceptOffer(offer.id, offer.taker.walletAddress, offer.taker.fee);
   }
@@ -97,6 +97,8 @@ contract FS_Core is Ownable {
     verifySignature(message, offer.id, nonce, signedMessage);
     nonces[nonce] = true;
 
+    delete offers[id];
+    
     address[] memory nativeAddresses = new address[](1);
     nativeAddresses[0] = offer.maker.walletAddress;
 
@@ -104,10 +106,6 @@ contract FS_Core is Ownable {
     nativeValues[0] = offer.maker.native;
 
     fsVault.executeCalls(nativeAddresses, nativeValues, tokenCalldatas);
-
-    offer.status = FS_Util.Status.CANCELLED;
-    
-    offers[id] = offer;
 
     emit CancelOffer(offer.id);
   }
@@ -143,6 +141,7 @@ contract FS_Core is Ownable {
 
   function verifySignature(string memory message, uint256 offerId, uint256 nonce, bytes memory signedMessage) internal view {
     require(signedMessage.length == 65, "FSC::Invalid signature length");
+    require(block.timestamp < (nonce + 3 minutes), "FSC::Expired signature");
 
     bytes32 messageHash = keccak256(abi.encodePacked(message, offerId, nonce));
     bytes32 signedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
