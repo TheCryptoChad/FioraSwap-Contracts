@@ -12,19 +12,15 @@ contract FS_Core is Ownable {
     address private immutable _oracleAddress;
 
     uint256 private _offerCount;
+    uint256 private _nonce;
 
     mapping(uint256 => FS_Util.Offer) private _offers;
-    mapping(uint256 => bool) private _nonces;
+    
 
     event CreateOffer(uint256 indexed id);
     event AcceptOffer(uint256 indexed id, address indexed taker, uint256 indexed takerFee);
     event CancelOffer(uint256 indexed id);
     event CraftReward(uint256 indexed id, address indexed crafter);
-
-    modifier uniqueNonce(uint256 nonce_) {
-        require(!_nonces[nonce_], "FSC::Repeated nonce");
-        _;
-    }
 
     constructor(address owner_, address oracleAddress_) 
         Ownable(owner_) 
@@ -48,12 +44,10 @@ contract FS_Core is Ownable {
     ) 
         external 
         payable 
-        uniqueNonce(nonce_) 
     {
         require(msg.value == (offer_.maker.native + offer_.maker.fee), "FSC::Insufficient value");
 
         _verifySignature(message_, 0, nonce_, signedMessage_);
-        _nonces[nonce_] = true;
 
         offer_.id = _offerCount;
         offer_.maker.sent = true;
@@ -78,8 +72,7 @@ contract FS_Core is Ownable {
         bytes memory signedMessage_
     ) 
         external 
-        payable 
-        uniqueNonce(nonce_)
+        payable
     {
         FS_Util.Offer memory offer = _offers[id_];
 
@@ -88,12 +81,6 @@ contract FS_Core is Ownable {
         require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
 
         _verifySignature(message_, id_, nonce_, signedMessage_);
-        _nonces[nonce_] = true;
-
-        offer.taker.walletAddress = msg.sender;
-        offer.taker.fee = takerFee_;
-        offer.taker.sent = true;
-        offer.status = FS_Util.Status.COMPLETED;
 
         delete _offers[id_];
 
@@ -117,8 +104,7 @@ contract FS_Core is Ownable {
         uint256 nonce_, 
         bytes memory signedMessage_
     ) 
-        external 
-        uniqueNonce(nonce_) 
+        external
     {
         FS_Util.Offer memory offer = _offers[id_];
 
@@ -126,7 +112,6 @@ contract FS_Core is Ownable {
         require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
 
         _verifySignature(message_, id_, nonce_, signedMessage_);
-        _nonces[nonce_] = true;
 
         delete _offers[id_];
 
@@ -148,11 +133,9 @@ contract FS_Core is Ownable {
         uint256 nonce_, 
         bytes memory signedMessage_
     ) 
-        external 
-        uniqueNonce(nonce_) 
+        external
     {
         _verifySignature(message_, 0, nonce_, signedMessage_);
-        _nonces[nonce_] = true;
 
         address[] memory nativeAddresses;
         uint256[] memory nativeValues;
@@ -181,10 +164,10 @@ contract FS_Core is Ownable {
         uint256 nonce_, 
         bytes memory signedMessage_
     ) 
-        internal 
-        view 
+        internal  
     {
         require(signedMessage_.length == 65, "FSC::Invalid signature length");
+        require(_nonce < nonce_, "FSC::Repeated nonce");
         require((block.timestamp * 10) < (nonce_ + 3 minutes), "FSC::Expired signature");
 
         bytes32 messageHash = keccak256(abi.encodePacked(message_, id_, nonce_));
@@ -200,5 +183,6 @@ contract FS_Core is Ownable {
         }
 
         require(ecrecover(signedMessageHash, v, r, s) == _oracleAddress, "FSC::Unauthorized call");
+        _nonce = nonce_;
     }
 }

@@ -20,40 +20,28 @@ const fullStatusLog = async (
   ETH: ${ethers.formatEther(await account1.provider.getBalance(account1))}
   T20_1: ${ethers.formatEther(await t20_1Contract.balanceOf(account1))}
   T20_2: ${ethers.formatEther(await t20_2Contract.balanceOf(account1))}
-  T721_1: ${(await t721_1Contract.ownerOf(BigInt(1))) === account1.address ? '#1, ' : ''}${
-		(await t721_1Contract.ownerOf(BigInt(2))) === account1.address ? '#2, ' : ''
-	}${(await t721_1Contract.ownerOf(BigInt(3))) === account1.address ? '#3, ' : ''}${(await t721_1Contract.ownerOf(BigInt(4))) === account1.address ? '#4' : ''}
-  T721_2: ${(await t721_2Contract.ownerOf(BigInt(1))) === account1.address ? '#1, ' : ''}${
-		(await t721_2Contract.ownerOf(BigInt(2))) === account1.address ? '#2, ' : ''
-	}${(await t721_2Contract.ownerOf(BigInt(3))) === account1.address ? '#3, ' : ''}${(await t721_2Contract.ownerOf(BigInt(4))) === account1.address ? '#4' : ''}
-  T1155_1: ${await t1155_1Contract.balanceOfBatch(
-		[account1, account1, account1, account1, account1, account1],
-		[BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)]
-	)}
-  T1155_2: ${await t1155_2Contract.balanceOfBatch(
-		[account1, account1, account1, account1, account1, account1],
-		[BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)]
-	)}
+  T721_1: ${(await t721_1Contract.ownerOf(BigInt(1))) === account1.address ? '#1, ' : ''}${(await t721_1Contract.ownerOf(BigInt(2))) === account1.address ? '#2, ' : ''}${
+		(await t721_1Contract.ownerOf(BigInt(3))) === account1.address ? '#3, ' : ''
+	}${(await t721_1Contract.ownerOf(BigInt(4))) === account1.address ? '#4' : ''}
+  T721_2: ${(await t721_2Contract.ownerOf(BigInt(1))) === account1.address ? '#1, ' : ''}${(await t721_2Contract.ownerOf(BigInt(2))) === account1.address ? '#2, ' : ''}${
+		(await t721_2Contract.ownerOf(BigInt(3))) === account1.address ? '#3, ' : ''
+	}${(await t721_2Contract.ownerOf(BigInt(4))) === account1.address ? '#4' : ''}
+  T1155_1: ${await t1155_1Contract.balanceOfBatch([account1, account1, account1, account1, account1, account1], [BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)])}
+  T1155_2: ${await t1155_2Contract.balanceOfBatch([account1, account1, account1, account1, account1, account1], [BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)])}
 
   Account 2 owns:
   Address: ${account2.address}
   ETH: ${ethers.formatEther(await account2.provider.getBalance(account2))}
   T20_1: ${ethers.formatEther(await t20_1Contract.balanceOf(account2))}
   T20_2: ${ethers.formatEther(await t20_2Contract.balanceOf(account2))}
-  T721_1: ${(await t721_1Contract.ownerOf(BigInt(1))) === account2.address ? '#1, ' : ''}${
-		(await t721_1Contract.ownerOf(BigInt(2))) === account2.address ? '#2, ' : ''
-	}${(await t721_1Contract.ownerOf(BigInt(3))) === account2.address ? '#3, ' : ''}${(await t721_1Contract.ownerOf(BigInt(4))) === account2.address ? '#4' : ''}
-  T721_2: ${(await t721_2Contract.ownerOf(BigInt(1))) === account2.address ? '#1, ' : ''}${
-		(await t721_2Contract.ownerOf(BigInt(2))) === account2.address ? '#2, ' : ''
-	}${(await t721_2Contract.ownerOf(BigInt(3))) === account2.address ? '#3, ' : ''}${(await t721_2Contract.ownerOf(BigInt(4))) === account2.address ? '#4' : ''}
-  T1155_1: ${await t1155_1Contract.balanceOfBatch(
-		[account2, account2, account2, account2, account2, account2],
-		[BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)]
-	)}
-  T1155_2: ${await t1155_2Contract.balanceOfBatch(
-		[account2, account2, account2, account2, account2, account2],
-		[BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)]
-	)}
+  T721_1: ${(await t721_1Contract.ownerOf(BigInt(1))) === account2.address ? '#1, ' : ''}${(await t721_1Contract.ownerOf(BigInt(2))) === account2.address ? '#2, ' : ''}${
+		(await t721_1Contract.ownerOf(BigInt(3))) === account2.address ? '#3, ' : ''
+	}${(await t721_1Contract.ownerOf(BigInt(4))) === account2.address ? '#4' : ''}
+  T721_2: ${(await t721_2Contract.ownerOf(BigInt(1))) === account2.address ? '#1, ' : ''}${(await t721_2Contract.ownerOf(BigInt(2))) === account2.address ? '#2, ' : ''}${
+		(await t721_2Contract.ownerOf(BigInt(3))) === account2.address ? '#3, ' : ''
+	}${(await t721_2Contract.ownerOf(BigInt(4))) === account2.address ? '#4' : ''}
+  T1155_1: ${await t1155_1Contract.balanceOfBatch([account2, account2, account2, account2, account2, account2], [BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)])}
+  T1155_2: ${await t1155_2Contract.balanceOfBatch([account2, account2, account2, account2, account2, account2], [BigInt(1), BigInt(2), BigInt(3), BigInt(4), BigInt(5), BigInt(6)])}
   `);
 };
 
@@ -158,7 +146,7 @@ describe('FioraSwap', function () {
 		await t1155_2Contract.connect(account1).setApprovalForAll(fsVaultContractAddress, true);
 
 		const message: string = `Create FS Offer:`;
-		const nonce: number = Math.floor(Date.now() / 10);
+		const nonce: number = Date.now();
 		const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 0, nonce]);
 		const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 		const signedMessage: string = await account1.signMessage(messageBytes);
@@ -278,7 +266,7 @@ describe('FioraSwap', function () {
 			const takerFee: bigint = ethers.parseEther('3');
 
 			const message: string = `Accept FS Offer:`;
-			const nonce: number = Math.floor(Date.now() / 10);
+			const nonce: number = Date.now();
 			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
 			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 			const signedMessage: string = await account1.signMessage(messageBytes);
@@ -335,35 +323,19 @@ describe('FioraSwap', function () {
 					{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account2.address, ethers.parseEther('50')]) },
 					{
 						target: t721_1Address,
-						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account2.address,
-							BigInt(1),
-						]),
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account2.address, BigInt(1)]),
 					},
 					{
 						target: t721_1Address,
-						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account2.address,
-							BigInt(2),
-						]),
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account2.address, BigInt(2)]),
 					},
 					{
 						target: t721_2Address,
-						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account2.address,
-							BigInt(3),
-						]),
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account2.address, BigInt(3)]),
 					},
 					{
 						target: t721_2Address,
-						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account2.address,
-							BigInt(4),
-						]),
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account2.address, BigInt(4)]),
 					},
 					{
 						target: t1155_1Address,
@@ -424,7 +396,7 @@ describe('FioraSwap', function () {
 			} = await loadFixture(deployContractsFixture);
 
 			const message: string = `Cancel FS Offer:`;
-			const nonce: number = Math.floor(Date.now() / 10);
+			const nonce: number = Date.now();
 			const messageHash = ethers.solidityPackedKeccak256(['string', 'uint256', 'uint256'], [message, 1, nonce]);
 			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
 			const signedMessage: string = await account1.signMessage(messageBytes);
@@ -436,35 +408,19 @@ describe('FioraSwap', function () {
 					{ target: t20_2Address, callData: t20_2Contract.interface.encodeFunctionData('transfer', [account1.address, ethers.parseEther('50')]) },
 					{
 						target: t721_1Address,
-						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account1.address,
-							BigInt(1),
-						]),
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(1)]),
 					},
 					{
 						target: t721_1Address,
-						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account1.address,
-							BigInt(2),
-						]),
+						callData: t721_1Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(2)]),
 					},
 					{
 						target: t721_2Address,
-						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account1.address,
-							BigInt(3),
-						]),
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(3)]),
 					},
 					{
 						target: t721_2Address,
-						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [
-							fsVaultContractAddress,
-							account1.address,
-							BigInt(4),
-						]),
+						callData: t721_2Contract.interface.encodeFunctionData('safeTransferFrom(address,address,uint256)', [fsVaultContractAddress, account1.address, BigInt(4)]),
 					},
 					{
 						target: t1155_1Address,

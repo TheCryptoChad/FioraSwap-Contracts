@@ -18,6 +18,6 @@ Retrieve fees uses: 23,690 gas
 
 /****************V3*******************/
 Deploy contracts uses: 53,741 gas
-Create offer uses: 585,896 gas
-Accept offer uses: 703,274 gas
-Cancel offer uses: 421,361 gas
+Create offer uses: 585,477 gas
+Accept offer uses: 685,862 gas
+Cancel offer uses: 404,026 gas
