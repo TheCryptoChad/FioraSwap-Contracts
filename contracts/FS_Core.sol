@@ -78,7 +78,8 @@ contract FS_Core is Ownable {
         bytes memory signedMessage_
     ) 
         external 
-        payable uniqueNonce(nonce_)
+        payable 
+        uniqueNonce(nonce_)
     {
         FS_Util.Offer memory offer = _offers[id_];
 
