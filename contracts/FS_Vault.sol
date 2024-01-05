@@ -15,6 +15,8 @@ contract FS_Vault is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
 
     receive() external payable {}
 
+    fallback() external payable {}
+
     function executeCalls(
         address[] calldata nativeAddresses_, 
         uint256[] calldata nativeValues_, 
