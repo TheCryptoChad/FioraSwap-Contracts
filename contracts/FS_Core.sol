@@ -11,15 +11,13 @@ contract FS_Core is Ownable {
     FS_Rewards private immutable _fsRewards;
     address private immutable _oracleAddress;
 
-    uint256 private _offerCount;
     uint256 private _nonce;
 
-    mapping(uint256 => FS_Util.Offer) private _offers;
+    mapping(bytes32 => FS_Util.Offer) private _offers;
     
-
-    event CreateOffer(uint256 indexed id);
-    event AcceptOffer(uint256 indexed id, address indexed taker, uint256 indexed takerFee);
-    event CancelOffer(uint256 indexed id);
+    event CreateOffer(bytes32 indexed id);
+    event AcceptOffer(bytes32 indexed id, address indexed taker, uint256 indexed takerFee);
+    event CancelOffer(bytes32 indexed id);
     event CraftReward(uint256 indexed id, address indexed crafter);
 
     constructor(address owner_, address oracleAddress_) 
@@ -28,7 +26,6 @@ contract FS_Core is Ownable {
         _fsVault = new FS_Vault(address(this));
         _fsRewards = new FS_Rewards(address(_fsVault));
         _oracleAddress = oracleAddress_;
-        ++_offerCount;
     }
 
     receive() external payable {}
@@ -47,12 +44,8 @@ contract FS_Core is Ownable {
     {
         require(msg.value == (offer_.maker.native + offer_.maker.fee), "FSC::Insufficient value");
 
-        _verifySignature(message_, 0, nonce_, signedMessage_);
+        _verifySignature(message_, offer_.id, nonce_, signedMessage_);
 
-        offer_.id = _offerCount;
-        offer_.maker.sent = true;
-
-        ++_offerCount;
         _offers[offer_.id] = offer_;
 
         address[] memory nativeAddresses;
@@ -64,7 +57,7 @@ contract FS_Core is Ownable {
     }
 
     function acceptOffer(
-        uint256 id_, 
+        bytes32 id_, 
         uint256 takerFee_, 
         FS_Util.Call[] calldata tokenCalldatas_, 
         string memory message_, 
@@ -76,9 +69,9 @@ contract FS_Core is Ownable {
     {
         FS_Util.Offer memory offer = _offers[id_];
 
+        require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
         require(msg.sender != offer.maker.walletAddress, "FSC::Can't accept own offer");
         require(msg.value == offer.taker.native + takerFee_, "FSC::Insufficient value");
-        require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
 
         _verifySignature(message_, id_, nonce_, signedMessage_);
 
@@ -98,7 +91,7 @@ contract FS_Core is Ownable {
     }
 
     function cancelOffer(
-        uint256 id_, 
+        bytes32 id_, 
         FS_Util.Call[] calldata tokenCalldatas_, 
         string memory message_, 
         uint256 nonce_, 
@@ -107,9 +100,8 @@ contract FS_Core is Ownable {
         external
     {
         FS_Util.Offer memory offer = _offers[id_];
-
-        require(msg.sender == offer.maker.walletAddress, "FSC::Not offer maker");
         require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
+        require(msg.sender == offer.maker.walletAddress, "FSC::Not offer maker");
 
         _verifySignature(message_, id_, nonce_, signedMessage_);
 
@@ -158,9 +150,35 @@ contract FS_Core is Ownable {
         return address(_fsRewards);
     }
 
+    function encodeOffer(
+        address maker_,
+        address[] memory makerTokenAddresses_,
+        uint256[] memory makerTokenNetworks_,
+        address[] memory takerTokenAddresses_,
+        uint256[] memory takerTokenNetworks_,
+        uint256 nonce_,
+        bytes32 offerHash_
+    ) 
+        external 
+        pure 
+        returns (bool) 
+    {
+        bytes32 offerHash = keccak256(
+            abi.encodePacked(
+                maker_,
+                makerTokenAddresses_,
+                makerTokenNetworks_,
+                takerTokenAddresses_,
+                takerTokenNetworks_,
+                nonce_
+            )
+        );
+        return offerHash == offerHash_;
+    }
+
     function _verifySignature(
         string memory message_, 
-        uint256 id_, 
+        bytes32 id_, 
         uint256 nonce_, 
         bytes memory signedMessage_
     ) 
