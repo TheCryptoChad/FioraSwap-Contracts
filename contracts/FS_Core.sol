@@ -13,7 +13,7 @@ contract FS_Core is Ownable {
   address private immutable oracleAddress;
 
   uint256 private offerCount;
-  FS_Util.Offer[] private offers;
+  mapping(uint256 => FS_Util.Offer) private offers;
 
   mapping(uint256 => bool) private nonces;
 
@@ -31,7 +31,6 @@ contract FS_Core is Ownable {
     oracleAddress = _oracleAddress;
     fsVault = new FS_Vault(address(this));
     fsRewards = new FS_Rewards(address(fsVault));
-    offers.push();
     offerCount++;
   }
 
@@ -54,7 +53,7 @@ contract FS_Core is Ownable {
     offer.maker.sent = true;
 
     offerCount++;
-    offers.push(offer);
+    offers[offer.id] = offer;
 
     emit CreateOffer(offer.id);
   }
@@ -85,6 +84,7 @@ contract FS_Core is Ownable {
     offer.status = FS_Util.Status.COMPLETED;
 
     offers[id] = offer;
+
     emit AcceptOffer(offer.id, offer.taker.walletAddress, offer.taker.fee);
   }
 

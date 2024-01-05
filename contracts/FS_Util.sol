@@ -18,7 +18,7 @@ contract FS_Util {
         Standard standard;
         address contractAddress;
         uint256[] ids;
-        uint256[] amount;
+        uint256[] amounts;
         uint256 network;
     }
 
@@ -26,6 +26,7 @@ contract FS_Util {
         address walletAddress;
         uint256 fee;
         uint256 native;
+        // Token[] tokens;
         bool sent;
     }
 
@@ -33,8 +34,6 @@ contract FS_Util {
         uint256 id;
         Participant maker;
         Participant taker;
-        Token[] makerTokens;
-        Token[] takerTokens;
         Status status;
     }
 

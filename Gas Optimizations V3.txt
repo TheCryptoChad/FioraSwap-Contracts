@@ -17,13 +17,7 @@ Batch cancel offers uses: 1,480,983 gas
 Retrieve fees uses: 23,690 gas
 
 /****************V3*******************/
-Deploy contracts uses: 53,001 gas
-Create offer uses: 558,902 gas
-Accept offer uses: 765,902 gas
-Cancel offer uses: 424,119 gas
-
-/********V3 WITH SIGNATURES***********/
 Deploy contracts uses: 53,741 gas
-Create offer uses: 590,800 gas
-Accept offer uses: 797,376 gas
-Cancel offer uses: 455,696 gas
+Create offer uses: 585,759 gas
+Accept offer uses: 795,054 gas
+Cancel offer uses: 453,397 gas
