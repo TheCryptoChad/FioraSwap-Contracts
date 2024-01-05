@@ -3,47 +3,54 @@ pragma solidity 0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-
 import {FS_Util} from "./FS_Util.sol";
 
 contract FS_Vault is ReentrancyGuard, Ownable, ERC721Holder, ERC1155Holder {
 
-    constructor(address _owner) Ownable(_owner) {}
-
-    fallback() external payable {}
+    constructor(address owner_) 
+        Ownable(owner_) 
+    {}
 
     receive() external payable {}
 
-    function executeCalls(address[] calldata nativeAddresses, uint256[] calldata nativeValues, FS_Util.Call[] calldata callDatas) external payable onlyOwner nonReentrant {
-      uint256 i;
-      
-      if (nativeAddresses.length > 0) {
-        do {
-          (bool success,) = nativeAddresses[i].call{value: nativeValues[i]}("");
+    function executeCalls(
+        address[] calldata nativeAddresses_, 
+        uint256[] calldata nativeValues_, 
+        FS_Util.Call[] calldata callDatas_
+    ) 
+        external 
+        payable 
+        onlyOwner 
+        nonReentrant 
+    {
+        uint256 i;
 
-          if (!success) revert();
+        if (nativeAddresses_.length > 0) {
+            do {
+                (bool success,) = nativeAddresses_[i].call{value: nativeValues_[i]}("");
 
-          unchecked{++i;}
-        } while (i < nativeAddresses.length);
-      }
-      
-      i = 0;
+                if (!success) revert();
 
-      if (callDatas.length > 0) {
-        do {
-          (bool success, bytes memory returnData) = callDatas[i].target.call(callDatas[i].callData);
+                unchecked{ ++i; }
+            } while (i < nativeAddresses_.length);
+        }
 
-          if (!success) {
-            assembly {
-              revert(add(returnData, 32), mload(returnData))
-            }
-          }
+        i = 0;
 
-          unchecked{++i;}
-        } while (i < callDatas.length);
-      }
+        if (callDatas_.length > 0) {
+            do {
+                (bool success, bytes memory returnData) = callDatas_[i].target.call(callDatas_[i].callData);
+
+                if (!success) {
+                    assembly {
+                        revert(add(returnData, 32), mload(returnData))
+                    }
+                }
+
+                unchecked{ ++i; }
+            } while (i < callDatas_.length);
+        }
     }
 }

@@ -148,7 +148,7 @@ describe('FioraSwap', function () {
 			status: BigInt(0),
 		};
 
-		await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+		//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
 		await t20_1Contract.connect(account1).approve(fsVaultContractAddress, ethers.parseEther('50'));
 		await t20_2Contract.connect(account1).approve(fsVaultContractAddress, ethers.parseEther('50'));
@@ -221,7 +221,7 @@ describe('FioraSwap', function () {
 
 		console.log(`Create offer uses: ${createOfferGas?.gasUsed} gas`);
 
-		await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+		//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 
 		return {
 			account1,
@@ -396,9 +396,9 @@ describe('FioraSwap', function () {
 
 			console.log(`Accept offer uses: ${acceptOfferGas?.gasUsed} gas`);
 
-			console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
+			//console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
 
-			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+			//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
 
@@ -496,9 +496,9 @@ describe('FioraSwap', function () {
 
 			console.log(`Cancel offer uses: ${cancelOfferGas?.gasUsed} gas`);
 
-			console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
+			//console.log(`Collected Fees ${ethers.formatEther(await account1.provider.getBalance(await fsCoreContract.getAddress()))} ETH`);
 
-			await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
+			//await fullStatusLog(account1, account2, t20_1Contract, t20_2Contract, t721_1Contract, t721_2Contract, t1155_1Contract, t1155_2Contract);
 		});
 	});
 });
