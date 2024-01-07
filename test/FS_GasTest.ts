@@ -72,6 +72,9 @@ describe('FioraSwap', function () {
 		const t1155_1Contract = await t1155_1Factory.connect(account1).deploy();
 		const t1155_2Contract = await t1155_2Factory.connect(account1).deploy();
 
+		await t20_1Contract.connect(account1).mint(account1, ethers.parseEther('80'));
+		await t20_2Contract.connect(account1).mint(account1, ethers.parseEther('80'));
+
 		await t20_1Contract.connect(account1).transfer(account2, ethers.parseEther('30'));
 		await t20_2Contract.connect(account1).transfer(account2, ethers.parseEther('30'));
 
