@@ -15,9 +15,9 @@ contract FS_Core is Ownable {
 
     mapping(bytes32 => FS_Util.Offer) private _offers;
     
-    event CreateOffer(bytes32 indexed id);
+    event CreateOffer(bytes32 indexed id, address indexed maker);
     event AcceptOffer(bytes32 indexed id, address indexed taker, uint256 indexed takerFee);
-    event CancelOffer(bytes32 indexed id);
+    event CancelOffer(bytes32 indexed id, address indexed maker);
     event CraftReward(uint256 indexed id, address indexed crafter);
 
     constructor(address owner_, address oracleAddress_) 
@@ -53,7 +53,7 @@ contract FS_Core is Ownable {
 
         _fsVault.executeCalls{value: offer_.maker.native}(nativeAddresses, nativeValues, tokenCalldatas_);
 
-        emit CreateOffer(offer_.id);
+        emit CreateOffer(offer_.id, msg.sender);
     }
 
     function acceptOffer(
@@ -101,7 +101,7 @@ contract FS_Core is Ownable {
     {
         FS_Util.Offer memory offer = _offers[id_];
         require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
-        require(msg.sender == offer.maker.walletAddress, "FSC::Not offer maker");
+        require(msg.sender == offer.maker.walletAddress || msg.sender == owner(), "FSC::Not offer maker");
 
         _verifySignature(message_, id_, nonce_, signedMessage_);
 
@@ -115,11 +115,11 @@ contract FS_Core is Ownable {
 
         _fsVault.executeCalls(nativeAddresses, nativeValues, tokenCalldatas_);
 
-        emit CancelOffer(id_);
+        emit CancelOffer(id_, msg.sender);
     }
 
     function craftReward(
-        uint256 id_, 
+        bytes32 id_, 
         FS_Util.Call[] calldata tokenCalldatas_, 
         string memory message_, 
         uint256 nonce_, 
@@ -127,14 +127,14 @@ contract FS_Core is Ownable {
     ) 
         external
     {
-        _verifySignature(message_, 0, nonce_, signedMessage_);
+        _verifySignature(message_, id_, nonce_, signedMessage_);
 
         address[] memory nativeAddresses;
         uint256[] memory nativeValues;
 
         _fsVault.executeCalls(nativeAddresses, nativeValues, tokenCalldatas_);
 
-        emit CraftReward(id_, msg.sender);
+        emit CraftReward(uint256(id_), msg.sender);
     }
 
     function claimFees() external onlyOwner {

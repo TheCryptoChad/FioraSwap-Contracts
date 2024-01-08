@@ -3,15 +3,15 @@ pragma solidity 0.8.20;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
-contract Test1155_1 is ERC1155 {
+contract FS_Test1155_1 is ERC1155 {
     string private _name;
     string private _symbol;
 
     mapping(address => uint256) private _hasMinted;
 
     constructor() ERC1155("") {
-        _name = "Test1155_1";
-        _symbol = "T1155_1";
+        _name = "FS_Test1155_1";
+        _symbol = "FS_T1155_1";
     }
 
     function name() public view returns (string memory) {
