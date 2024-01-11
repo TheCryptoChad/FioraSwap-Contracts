@@ -9,7 +9,7 @@ contract FS_Test20_1 is ERC20 {
     constructor() ERC20("FS_Test20_1", "FS_T20_1") {}
 
     function mint(address to, uint256 amount) public {
-        require(_hasMinted[msg.sender] < 3, "FST::Can't mint more");
+        require(_hasMinted[msg.sender] < 10, "FST::Can't mint more");
         _mint(to, amount);
         _hasMinted[msg.sender] += 1;
     }

@@ -19,6 +19,7 @@ contract FS_Util {
         Participant maker;
         Participant taker;
         Status status;
+        bool isPrivate;
     }
 
     struct Call {

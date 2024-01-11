@@ -23,7 +23,7 @@ contract FS_Test1155_1 is ERC1155 {
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public {
-        require(_hasMinted[msg.sender] < 3, "FST::Can't mint more");
+        require(_hasMinted[msg.sender] < 10, "FST::Can't mint more");
         _mintBatch(to, ids, amounts, data);
         _hasMinted[msg.sender] += 1;
     }

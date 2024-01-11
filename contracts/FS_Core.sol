@@ -19,6 +19,9 @@ contract FS_Core is Ownable {
     event AcceptOffer(bytes32 indexed id, address indexed taker, uint256 indexed takerFee);
     event CancelOffer(bytes32 indexed id, address indexed maker);
     event CraftReward(uint256 indexed id, address indexed crafter);
+    event CreateOrUpdateUser(bytes32 indexed id, string indexed username, string indexed image, address[] addresses);
+    event SetUserReward(bytes32 indexed id, uint256 indexed amount);
+    event BackupDatabase();
 
     constructor(address owner_, address oracleAddress_) 
         Ownable(owner_) 
@@ -69,6 +72,7 @@ contract FS_Core is Ownable {
     {
         FS_Util.Offer memory offer = _offers[id_];
 
+        if (offer.isPrivate) require(msg.sender == offer.taker.walletAddress, "FSC::Not offer taker");
         require(offer.status == FS_Util.Status.ACTIVE, "FSC::Offer expired");
         require(msg.sender != offer.maker.walletAddress, "FSC::Can't accept own offer");
         require(msg.value == offer.taker.native + takerFee_, "FSC::Insufficient value");
@@ -137,6 +141,29 @@ contract FS_Core is Ownable {
         emit CraftReward(uint256(id_), msg.sender);
     }
 
+    function createOrUpdateUser(
+        bytes32 id_,
+        string memory username_,
+        string memory image_,
+        address[] memory addresses_,
+        string memory message_,
+        uint256 nonce_, 
+        bytes memory signedMessage_
+    ) 
+        external
+    {
+        _verifySignature(message_, id_, nonce_, signedMessage_);
+        emit CreateOrUpdateUser(id_, username_, image_, addresses_);
+    } 
+
+    function setUserReward(bytes32 id_, uint256 amount_) external onlyOwner {
+        emit SetUserReward(id_, amount_);
+    }
+
+    function backupDatabase() external onlyOwner {
+        emit BackupDatabase();
+    }
+
     function claimFees() external onlyOwner {
         address owner = owner();
         payable(owner).transfer(address(this).balance);
@@ -152,6 +179,9 @@ contract FS_Core is Ownable {
 
     function encodeOffer(
         address maker_,
+        address taker_,
+        uint256 makerNative_,
+        uint256 takerNative_,
         address[] memory makerTokenAddresses_,
         uint256[] memory makerTokenNetworks_,
         address[] memory takerTokenAddresses_,
@@ -166,6 +196,9 @@ contract FS_Core is Ownable {
         bytes32 offerHash = keccak256(
             abi.encodePacked(
                 maker_,
+                taker_,
+                makerNative_,
+                takerNative_,
                 makerTokenAddresses_,
                 makerTokenNetworks_,
                 takerTokenAddresses_,

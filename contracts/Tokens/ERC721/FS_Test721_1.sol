@@ -11,7 +11,7 @@ contract FS_Test721_1 is ERC721 {
     constructor() ERC721("FS_Test721_1", "FS_T721_1") {}
 
     function safeMint(address to) public {
-        require(_hasMinted[msg.sender] < 3, "FST::Can't mint more");
+        require(_hasMinted[msg.sender] < 10, "FST::Can't mint more");
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _hasMinted[msg.sender] += 1;

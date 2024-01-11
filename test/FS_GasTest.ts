@@ -4,6 +4,24 @@ import { FS_Test20_1, FS_Test20_2, FS_Test721_1, FS_Test721_2, FS_Test1155_1, FS
 import * as FSVault from '../artifacts/contracts/FS_Vault.sol/FS_Vault.json';
 import * as FSRewards from '../artifacts/contracts/FS_Rewards.sol/FS_Rewards.json';
 
+const stringToBytes32 = (value: string) => {
+	const bytes32 = new Uint8Array(32);
+	const view = new DataView(bytes32.buffer);
+	view.setUint32(28, Number(value), false);
+	const hexString = Array.from(bytes32)
+		.map((byte) => byte.toString(16).padStart(2, '0'))
+		.join('');
+	return '0x' + hexString;
+};
+
+function bytes32ToString(value: string) {
+	const hexString = value.slice(2);
+	const bytes = new Uint8Array(hexString.match(/[\da-f]{2}/gi)!.map((byte) => parseInt(byte, 16)));
+	const view = new DataView(bytes.buffer);
+	const decodedNumber = view.getUint32(28, false);
+	return String(decodedNumber);
+}
+
 const fullStatusLog = async (
 	account1: any,
 	account2: any,
@@ -116,9 +134,12 @@ describe('FioraSwap', function () {
 		const messageNonce: number = Date.now();
 
 		const encodedOffer = ethers.solidityPackedKeccak256(
-			['address', 'address[]', 'uint256[]', 'address[]', 'uint256[]', 'uint256'],
+			['address', 'address', 'uint256', 'uint256', 'address[]', 'uint256[]', 'address[]', 'uint256[]', 'uint256'],
 			[
 				account1.address,
+				account2.address,
+				ethers.parseEther('50'),
+				ethers.parseEther('30'),
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
 				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
@@ -131,6 +152,9 @@ describe('FioraSwap', function () {
 			.connect(account1)
 			.encodeOffer(
 				account1.address,
+				account2.address,
+				ethers.parseEther('50'),
+				ethers.parseEther('30'),
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
 				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
@@ -151,12 +175,13 @@ describe('FioraSwap', function () {
 				sent: true,
 			},
 			taker: {
-				walletAddress: '0x0000000000000000000000000000000000000000',
+				walletAddress: account2,
 				fee: ethers.parseEther('0'),
 				native: ethers.parseEther('30'),
 				sent: false,
 			},
 			status: BigInt(1),
+			isPrivate: true,
 		};
 
 		const message: string = `Create FS Offer:`;
@@ -478,9 +503,8 @@ describe('FioraSwap', function () {
 		it('User 1 Crafts Reward', async function () {
 			const { fsCoreContract, fsRewardsContract, fsRewardsContractAddress, account1 } = await loadFixture(deployContractsFixture);
 
-			//Last digit 1-9 or A for 10
-			const rewardId: string = '0x0000000000000000000000000000000000000000000000000000000000000001';
-			const numericRewardId: bigint = BigInt(1);
+			const rewardId: string = stringToBytes32('2');
+			const numericRewardId: bigint = BigInt(2);
 
 			const message: string = `Craft FS Reward:`;
 			const nonce: number = Date.now();
@@ -505,55 +529,49 @@ describe('FioraSwap', function () {
 			console.log(`User 1 owns: ${await fsRewardsContract.balanceOf(account1, numericRewardId)} Reward #${Number(numericRewardId)}`);
 		});
 	});
+
+	describe('Create Or Update User', async function () {
+		it('User 1 Gets Created Or Updated', async function () {
+			const { fsCoreContract, account1 } = await loadFixture(deployContractsFixture);
+
+			const userId: string = stringToBytes32('1');
+
+			const message: string = `Create Or Update User:`;
+			const nonce: number = Date.now();
+			const messageHash = ethers.solidityPackedKeccak256(['string', 'bytes32', 'uint256'], [message, userId, nonce]);
+			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
+			const signedMessage: string = await account1.signMessage(messageBytes);
+
+			const createOrUpdateUser = await fsCoreContract.connect(account1).createOrUpdateUser(userId, 'TheCryptoChad', '/image.png', [account1.address], message, nonce, signedMessage);
+
+			const createOrUpdateUserGas = await createOrUpdateUser.wait();
+
+			console.log(`Create Or Update User uses: ${createOrUpdateUserGas?.gasUsed} gas`);
+		});
+	});
+
+	describe('Owner Functions', async function () {
+		it('Owner Calls Functions', async function () {
+			const { fsCoreContract, account1 } = await loadFixture(deployContractsFixture);
+
+			const userId: string = stringToBytes32('4294967295');
+			console.log(userId);
+			console.log(bytes32ToString(userId));
+
+			console.log(`Owner Has: ${ethers.formatEther(await account1.provider.getBalance(account1))} ETH`);
+			console.log(`FS_Core Has: ${ethers.formatEther(await account1.provider.getBalance(fsCoreContract.target))} ETH`);
+
+			const claimFees = await fsCoreContract.connect(account1).claimFees();
+			await claimFees.wait();
+
+			console.log(`Owner Has: ${ethers.formatEther(await account1.provider.getBalance(account1))} ETH`);
+			console.log(`FS_Core Has: ${ethers.formatEther(await account1.provider.getBalance(fsCoreContract.target))} ETH`);
+
+			const setUserReward = await fsCoreContract.connect(account1).setUserReward(userId, BigInt(100));
+			await setUserReward.wait();
+
+			const backupDatabase = await fsCoreContract.connect(account1).backupDatabase();
+			await backupDatabase.wait();
+		});
+	});
 });
-
-// tokens: [
-//   {standard: BigInt(0), contractAddress: fsT20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], network: [BigInt(2109)]},
-//   {standard: BigInt(0), contractAddress: fsT20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("50")], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_1Address, ids: [BigInt(1)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_1Address, ids: [BigInt(2)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_2Address, ids: [BigInt(3)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_2Address, ids: [BigInt(4)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(2), contractAddress: fsT1155_1Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(50), BigInt(50), BigInt(50)], network: [BigInt(2109)]},
-//   {standard: BigInt(2), contractAddress: fsT1155_2Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(50), BigInt(50), BigInt(50)], network: [BigInt(2109)]},
-// ],
-
-// tokens: [
-//   {standard: BigInt(0), contractAddress: fsT20_1Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], network: [BigInt(2109)]},
-//   {standard: BigInt(0), contractAddress: fsT20_2Address, ids: [BigInt(0)], amounts: [ethers.parseEther("30")], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_1Address, ids: [BigInt(3)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_1Address, ids: [BigInt(4)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_2Address, ids: [BigInt(1)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(1), contractAddress: fsT721_2Address, ids: [BigInt(2)], amounts: [BigInt(0)], network: [BigInt(2109)]},
-//   {standard: BigInt(2), contractAddress: fsT1155_1Address, ids: [BigInt(4), BigInt(5), BigInt(6)], amounts: [BigInt(30), BigInt(30), BigInt(30)], network: [BigInt(2109)]},
-//   {standard: BigInt(2), contractAddress: fsT1155_2Address, ids: [BigInt(1), BigInt(2), BigInt(3)], amounts: [BigInt(30), BigInt(30), BigInt(30)], network: [BigInt(2109)]},
-// ],
-
-// makerTokenStandards: [BigInt(0), BigInt(0), BigInt(1), BigInt(1), BigInt(1), BigInt(1), BigInt(2), BigInt(2)],
-// makerTokenAddresses: [fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
-// makerTokenIds: [[BigInt(0)], [BigInt(0)], [BigInt(1)], [BigInt(2)], [BigInt(3)], [BigInt(4)], [BigInt(1), BigInt(2), BigInt(3)], [BigInt(4), BigInt(5), BigInt(6)]],
-// makerTokenAmounts: [
-// 	[ethers.parseEther('50')],
-// 	[ethers.parseEther('50')],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(50), BigInt(50), BigInt(50)],
-// 	[BigInt(50), BigInt(50), BigInt(50)],
-// ],
-// makerTokenNetworks: [BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
-// takerTokenStandards: [BigInt(0), BigInt(0), BigInt(1), BigInt(1), BigInt(1), BigInt(1), BigInt(2), BigInt(2)],
-// takerTokenAddresses: [fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
-// takerTokenIds: [[BigInt(0)], [BigInt(0)], [BigInt(3)], [BigInt(4)], [BigInt(1)], [BigInt(2)], [BigInt(4), BigInt(5), BigInt(6)], [BigInt(1), BigInt(2), BigInt(3)]],
-// takerTokenAmounts: [
-// 	[ethers.parseEther('30')],
-// 	[ethers.parseEther('30')],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(1)],
-// 	[BigInt(30), BigInt(30), BigInt(30)],
-// 	[BigInt(30), BigInt(30), BigInt(30)],
-// ],
-// takerTokenNetworks: [BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
