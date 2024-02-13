@@ -19,9 +19,6 @@ contract FS_Core is Ownable {
     event AcceptOffer(bytes32 indexed id, address indexed taker, uint256 indexed takerFee);
     event CancelOffer(bytes32 indexed id, address indexed maker);
     event CraftReward(uint256 indexed id, address indexed crafter);
-    event CreateOrUpdateUser(bytes32 indexed id, string indexed username, string indexed image, address[] addresses);
-    event SetUserReward(bytes32 indexed id, uint256 indexed amount);
-    event BackupDatabase();
 
     constructor(address owner_, address oracleAddress_) 
         Ownable(owner_) 
@@ -141,29 +138,6 @@ contract FS_Core is Ownable {
         emit CraftReward(uint256(id_), msg.sender);
     }
 
-    function createOrUpdateUser(
-        bytes32 id_,
-        string memory username_,
-        string memory image_,
-        address[] memory addresses_,
-        string memory message_,
-        uint256 nonce_, 
-        bytes memory signedMessage_
-    ) 
-        external
-    {
-        _verifySignature(message_, id_, nonce_, signedMessage_);
-        emit CreateOrUpdateUser(id_, username_, image_, addresses_);
-    } 
-
-    function setUserReward(bytes32 id_, uint256 amount_) external onlyOwner {
-        emit SetUserReward(id_, amount_);
-    }
-
-    function backupDatabase() external onlyOwner {
-        emit BackupDatabase();
-    }
-
     function claimFees() external onlyOwner {
         address owner = owner();
         payable(owner).transfer(address(this).balance);
@@ -183,8 +157,8 @@ contract FS_Core is Ownable {
         uint256 makerNative_,
         uint256 takerNative_,
         address[] memory makerTokenAddresses_,
-        uint256[] memory makerTokenNetworks_,
         address[] memory takerTokenAddresses_,
+        uint256[] memory makerTokenNetworks_,
         uint256[] memory takerTokenNetworks_,
         uint256 nonce_,
         bytes32 offerHash_
@@ -200,8 +174,8 @@ contract FS_Core is Ownable {
                 makerNative_,
                 takerNative_,
                 makerTokenAddresses_,
-                makerTokenNetworks_,
                 takerTokenAddresses_,
+                makerTokenNetworks_,
                 takerTokenNetworks_,
                 nonce_
             )

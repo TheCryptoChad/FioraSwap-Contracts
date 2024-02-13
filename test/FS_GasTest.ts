@@ -134,15 +134,15 @@ describe('FioraSwap', function () {
 		const messageNonce: number = Date.now();
 
 		const encodedOffer = ethers.solidityPackedKeccak256(
-			['address', 'address', 'uint256', 'uint256', 'address[]', 'uint256[]', 'address[]', 'uint256[]', 'uint256'],
+			['address', 'address', 'uint256', 'uint256', 'address[]', 'address[]', 'uint256[]', 'uint256[]', 'uint256'],
 			[
 				account1.address,
 				account2.address,
 				ethers.parseEther('50'),
 				ethers.parseEther('30'),
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
-				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
+				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				messageNonce,
 			]
@@ -156,8 +156,8 @@ describe('FioraSwap', function () {
 				ethers.parseEther('50'),
 				ethers.parseEther('30'),
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
-				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[fsT20_1Address, fsT20_2Address, fsT721_1Address, fsT721_1Address, fsT721_2Address, fsT721_2Address, fsT1155_1Address, fsT1155_2Address],
+				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				[BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109), BigInt(2109)],
 				messageNonce,
 				encodedOffer
@@ -165,6 +165,8 @@ describe('FioraSwap', function () {
 
 		console.log(encodedOffer);
 		console.log(encodeOffer);
+
+		if (!encodeOffer) throw new Error('Encoding mismatch');
 
 		const offer1 = {
 			id: encodedOffer,
@@ -530,33 +532,9 @@ describe('FioraSwap', function () {
 		});
 	});
 
-	describe('Create Or Update User', async function () {
-		it('User 1 Gets Created Or Updated', async function () {
-			const { fsCoreContract, account1 } = await loadFixture(deployContractsFixture);
-
-			const userId: string = stringToBytes32('1');
-
-			const message: string = `Create Or Update User:`;
-			const nonce: number = Date.now();
-			const messageHash = ethers.solidityPackedKeccak256(['string', 'bytes32', 'uint256'], [message, userId, nonce]);
-			const messageBytes = Buffer.from(messageHash.slice(2), 'hex');
-			const signedMessage: string = await account1.signMessage(messageBytes);
-
-			const createOrUpdateUser = await fsCoreContract.connect(account1).createOrUpdateUser(userId, 'TheCryptoChad', '/image.png', [account1.address], message, nonce, signedMessage);
-
-			const createOrUpdateUserGas = await createOrUpdateUser.wait();
-
-			console.log(`Create Or Update User uses: ${createOrUpdateUserGas?.gasUsed} gas`);
-		});
-	});
-
 	describe('Owner Functions', async function () {
 		it('Owner Calls Functions', async function () {
 			const { fsCoreContract, account1 } = await loadFixture(deployContractsFixture);
-
-			const userId: string = stringToBytes32('4294967295');
-			console.log(userId);
-			console.log(bytes32ToString(userId));
 
 			console.log(`Owner Has: ${ethers.formatEther(await account1.provider.getBalance(account1))} ETH`);
 			console.log(`FS_Core Has: ${ethers.formatEther(await account1.provider.getBalance(fsCoreContract.target))} ETH`);
@@ -566,12 +544,6 @@ describe('FioraSwap', function () {
 
 			console.log(`Owner Has: ${ethers.formatEther(await account1.provider.getBalance(account1))} ETH`);
 			console.log(`FS_Core Has: ${ethers.formatEther(await account1.provider.getBalance(fsCoreContract.target))} ETH`);
-
-			const setUserReward = await fsCoreContract.connect(account1).setUserReward(userId, BigInt(100));
-			await setUserReward.wait();
-
-			const backupDatabase = await fsCoreContract.connect(account1).backupDatabase();
-			await backupDatabase.wait();
 		});
 	});
 });

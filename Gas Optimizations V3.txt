@@ -18,8 +18,7 @@ Retrieve fees uses: 23,690 gas
 
 /****************V3*******************/
 Deploy contracts uses: 53,741 gas
-Create offer uses: 618,498 gas
-Accept offer uses: 677,506 gas
-Cancel offer uses: 398,819 gas
-Craft reward uses: 80,802 gas
-Create Or Update User uses: 40,601 gas
+Create offer uses: 618,526 gas
+Accept offer uses: 677,667 gas
+Cancel offer uses: 398,825 gas
+Craft reward uses: 80,753 gas
